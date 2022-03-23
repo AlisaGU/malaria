@@ -1,0 +1,120 @@
+#!/home/gushanshan/anaconda3/envs/vscode_r/bin/Rscript
+# 1. packages and external scripts ---------------------------------------- TODO:
+library(ggplot2)
+library(ggsignif)
+library(dplyr)
+library(ggpubr)
+library(grid)
+library(patchwork)
+library(ggrepel)
+# 2. functions ------------------------------------------------------------ TODO:
+get_data_for_plot <- function(dataname = NULL) {
+    data <- read.table(dataname, stringsAsFactors = F, sep = " ")
+    colnames(data) <- c(
+        "nopeak", paste("relative", c(0.01, 0.05, 0.1, 0.2, 0.5), sep = ""),
+        paste("absolute", c(10, 30, 50, 100, 200), sep = "")
+    )
+    rownames(data) <- paste("chrom", 1:14, sep = "")
+
+    data_for_plot <- data.frame(
+        value = unlist(data),
+        chrom = rep(rownames(data), times = ncol(data)),
+        source = rep(colnames(data), each = nrow(data))
+    )
+    a <- gsub("chrom", "", data_for_plot$chrom)
+    a[a != "1"] <- ""
+    data_for_plot$label <- a
+    return(data_for_plot)
+}
+
+plot_mutation_density <- function(data_for_plot = NULL, sig_y = NULL, line_y = NULL, text_y = NULL, y_min = NULL, y_max = NULL, label = NULL) {
+    p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add = "jitter", add.params = list(size = 3)) +
+        stat_compare_means(aes(group = source),
+            ref.group = "nopeak",
+            label = "p.signif", paired = T, label.y = sig_y, size = 10
+        ) +
+        scale_color_manual(values = color_value) +
+        scale_x_discrete(labels = c("control", "1%", "5%", "10%", "20%", "50%", "10bp", "30bp", "50bp", "100bp", "200bp")) +
+        geom_segment(aes(x = 2.0, xend = 6, y = line_y, yend = line_y), col = "#41ab5d") +
+        geom_segment(aes(x = 7.0, xend = 11, y = line_y, yend = line_y), col = "#fd8d3c") +
+        annotate("text", label = "Proportion summit", x = 4, y = text_y, size = 24 / .pt) +
+        annotate("text", label = "Absolute summit", x = 9, y = text_y, size = 24 / .pt) +
+        scale_y_continuous(expand = c(0, 0)) +
+        coord_cartesian(ylim = c(y_min, y_max)) +
+        labs(y = "Mutation density") +
+        theme_bw() +
+        theme(
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_text(size = 24, color = "black", angle = 30, hjust = 0.7, vjust = 0.7),
+            axis.text.y = element_text(size = 24, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 24, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 28, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")
+        )
+    if (label == F) {
+        return(p)
+    } else if (label == T) {
+        p1 <- p + geom_text_repel(aes(label = label), data_for_plot,
+            size = 4, box.padding = 0.5, point.padding = 0.08,
+            min.segment.length = 0.05, segment.color = "black", show.legend = F, max.overlaps = 20
+        )
+        return(p1)
+    }
+    return(p)
+}
+
+
+# 3. input ---------------------------------------------------------------- TODO:
+Args <- commandArgs()
+path <- Args[6]
+popu_symbol <- Args[7]
+# 4. variable setting of test module--------------------------------------- TODO:
+
+
+# 5. process -------------------------------------------------------------- TODO:
+setwd(path)
+color_value <- c(
+    "nopeak" = "#868686", "relative0.01" = "#005a32", "relative0.05" = "#238443",
+    "relative0.1" = "#41ab5d", "relative0.2" = "#78c679", "relative0.5" = "#addd8e",
+    "absolute10" = "#a63603", "absolute30" = "#e6550d", "absolute50" = "#fd8d3c",
+    "absolute100" = "#fdbe85", "absolute200" = "#feedde"
+)
+data_for_plot_all <- get_data_for_plot(dataname = "allvar_mean_variant_count")
+data_for_plot_snp <- get_data_for_plot(dataname = "snps_mean_variant_count")
+data_for_plot_indel <- get_data_for_plot(dataname = "indels_mean_variant_count")
+
+# general rule:
+# sig_y=nearest value larger than max(value)
+# line_y=sig_y+0.03
+# text_y＝sig_y+0.05
+# y_max=sig_y+0.07
+
+all_p <- plot_mutation_density(data_for_plot = data_for_plot_all, sig_y = 0.27, line_y = 0.29, text_y = 0.3, y_min = 0.05, y_max = 0.3, label = F)
+snp_p <- plot_mutation_density(data_for_plot = data_for_plot_snp, sig_y = 0.18, line_y = 0.197, text_y = 0.205, y_min = 0, y_max = 0.21, label = F)
+indel_p <- plot_mutation_density(data_for_plot = data_for_plot_indel, sig_y = 0.212, line_y = 0.23, text_y = 0.24, y_min = 0, y_max = 0.25, label = F)
+
+patch <- all_p / snp_p / indel_p
+patch +
+    plot_annotation(tag_levels = "A") &
+    theme(plot.tag = element_text(size = 32))
+ggsave("all_snp_indel_mutation_density.pdf", width = 10, height = 21)
+ggsave("all_snp_indel_mutation_density.jpg", width = 10, height = 21)
+
+
+all_p <- plot_mutation_density(data_for_plot = data_for_plot_all, sig_y = 0.27, line_y = 0.29, text_y = 0.3, y_min = 0.05, y_max = 0.3, label = T)
+snp_p <- plot_mutation_density(data_for_plot = data_for_plot_snp, sig_y = 0.18, line_y = 0.197, text_y = 0.205, y_min = 0, y_max = 0.21, label = T)
+indel_p <- plot_mutation_density(data_for_plot = data_for_plot_indel, sig_y = 0.212, line_y = 0.23, text_y = 0.24, y_min = 0, y_max = 0.25, label = T)
+
+patch <- all_p / snp_p / indel_p
+patch +
+    plot_annotation(tag_levels = "A") &
+    theme(plot.tag = element_text(size = 32))
+ggsave(paste0(popu_symbol, ".", "all_snp_indel_mutation_density_chr1.pdf"), width = 10, height = 21)
+ggsave(paste0(popu_symbol, ".", "all_snp_indel_mutation_density_chr1.jpg"), width = 10, height = 21)

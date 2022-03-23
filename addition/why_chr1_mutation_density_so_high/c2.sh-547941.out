@@ -1,0 +1,283 @@
++ cd /picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/pf6
+++ echo '01 02 03 04 05 06 07 08 09 10 11 12 13 14'
+++ tr ' ' '\n'
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 01
+01
+++ wc -l WSEA_PASS_01_polysite.bed
+++ awk '{print $1}'
++ before=25715
+++ bcftools view -H WSEA_polymor_01.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_01.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_01.vcf.gz: No such file or directory
++ after=0
+++ echo 0-25715
+++ bc
++ diff=-25715
+++ echo 'scale=2;-25715/25715'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 02
+02
+++ wc -l WSEA_PASS_02_polysite.bed
+++ awk '{print $1}'
++ before=34364
+++ bcftools view -H WSEA_polymor_02.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_02.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_02.vcf.gz: No such file or directory
++ after=0
+++ echo 0-34364
+++ bc
++ diff=-34364
+++ echo 'scale=2;-34364/34364'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 03
+03
+++ wc -l WSEA_PASS_03_polysite.bed
+++ awk '{print $1}'
++ before=40973
+++ bcftools view -H WSEA_polymor_03.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_03.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_03.vcf.gz: No such file or directory
++ after=0
+++ echo 0-40973
+++ bc
++ diff=-40973
+++ echo 'scale=2;-40973/40973'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 04
+04
+++ wc -l WSEA_PASS_04_polysite.bed
+++ awk '{print $1}'
++ before=43823
+++ bcftools view -H WSEA_polymor_04.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_04.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_04.vcf.gz: No such file or directory
++ after=0
+++ echo 0-43823
+++ bc
++ diff=-43823
+++ echo 'scale=2;-43823/43823'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 05
+05
+++ wc -l WSEA_PASS_05_polysite.bed
+++ awk '{print $1}'
++ before=52774
+++ bcftools view -H WSEA_polymor_05.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_05.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_05.vcf.gz: No such file or directory
++ after=0
+++ echo 0-52774
+++ bc
++ diff=-52774
+++ echo 'scale=2;-52774/52774'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 06
+06
+++ wc -l WSEA_PASS_06_polysite.bed
+++ awk '{print $1}'
++ before=44653
+++ bcftools view -H WSEA_polymor_06.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_06.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_06.vcf.gz: No such file or directory
++ after=0
+++ echo 0-44653
+++ bc
++ diff=-44653
+++ echo 'scale=2;-44653/44653'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 07
+07
+++ wc -l WSEA_PASS_07_polysite.bed
+++ awk '{print $1}'
++ before=48714
+++ bcftools view -H WSEA_polymor_07.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_07.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_07.vcf.gz: No such file or directory
++ after=0
+++ echo 0-48714
+++ bc
++ diff=-48714
+++ echo 'scale=2;-48714/48714'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 08
+08
+++ wc -l WSEA_PASS_08_polysite.bed
+++ awk '{print $1}'
++ before=50133
+++ bcftools view -H WSEA_polymor_08.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_08.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_08.vcf.gz: No such file or directory
++ after=0
+++ echo 0-50133
+++ bc
++ diff=-50133
+++ echo 'scale=2;-50133/50133'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 09
+09
+++ wc -l WSEA_PASS_09_polysite.bed
+++ awk '{print $1}'
++ before=59067
+++ bcftools view -H WSEA_polymor_09.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_09.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_09.vcf.gz: No such file or directory
++ after=0
+++ echo 0-59067
+++ bc
++ diff=-59067
+++ echo 'scale=2;-59067/59067'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 10
+10
+++ wc -l WSEA_PASS_10_polysite.bed
+++ awk '{print $1}'
++ before=66457
+++ bcftools view -H WSEA_polymor_10.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_10.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_10.vcf.gz: No such file or directory
++ after=0
+++ echo 0-66457
+++ bc
++ diff=-66457
+++ echo 'scale=2;-66457/66457'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 11
+11
+++ wc -l WSEA_PASS_11_polysite.bed
+++ awk '{print $1}'
++ before=77907
+++ bcftools view -H WSEA_polymor_11.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_11.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_11.vcf.gz: No such file or directory
++ after=0
+++ echo 0-77907
+++ bc
++ diff=-77907
+++ echo 'scale=2;-77907/77907'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 12
+12
+++ wc -l WSEA_PASS_12_polysite.bed
+++ awk '{print $1}'
++ before=77689
+++ bcftools view -H WSEA_polymor_12.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_12.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_12.vcf.gz: No such file or directory
++ after=0
+++ echo 0-77689
+++ bc
++ diff=-77689
+++ echo 'scale=2;-77689/77689'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 13
+13
+++ wc -l WSEA_PASS_13_polysite.bed
+++ awk '{print $1}'
++ before=98543
+++ bcftools view -H WSEA_polymor_13.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_13.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_13.vcf.gz: No such file or directory
++ after=0
+++ echo 0-98543
+++ bc
++ diff=-98543
+++ echo 'scale=2;-98543/98543'
+++ bc
++ por=-1.00
++ echo
+
++ for i in '$(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n")'
++ echo 14
+14
+++ wc -l WSEA_PASS_14_polysite.bed
+++ awk '{print $1}'
++ before=119658
+++ bcftools view -H WSEA_polymor_14.vcf.gz
+++ awk '{print $1}'
+++ wc -l
+[E::hts_open_format] Failed to open file "WSEA_polymor_14.vcf.gz" : No such file or directory
+Failed to read from WSEA_polymor_14.vcf.gz: No such file or directory
++ after=0
+++ echo 0-119658
+++ bc
++ diff=-119658
+++ echo 'scale=2;-119658/119658'
+++ bc
++ por=-1.00
++ echo
+
