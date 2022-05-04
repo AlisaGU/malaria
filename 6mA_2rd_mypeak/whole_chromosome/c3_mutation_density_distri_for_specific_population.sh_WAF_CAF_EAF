@@ -4,6 +4,7 @@
 #SBATCH -p evolgen
 #SBATCH -o %x-%j.out
 #SBATCH --mem=50G
+
 # FUNCTIONS TODO:
 get_sample_list() {
     popu_symbol=$1
@@ -12,7 +13,7 @@ get_sample_list() {
 
 extract_popu_vcf() {
     popu_output_dir=$1
-    $code_dir/s3_2_extract_vcf_1.sh $popu_output_dir "01"
+    $code_dir/s3_2_extract_vcf_1.sh $popu_output_dir "06 07"
 }
 
 compute_mutation_density() {
@@ -28,10 +29,10 @@ check_variants() {
 }
 
 plot_mutation_density() {
-    $code_dir/ss3_3_1_plot.R_EAF $popu_output_dir/mutation_density $popu_symbol
+    $code_dir/ss3_3_1_plot.R_WAF_CAF_EAF $popu_output_dir/mutation_density $popu_symbol
 }
 # VARIABLE NAMING TODO:
-code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd"
+code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd/whole_chromosome"
 global_output_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation"
 # VARIABLE NAMING for test module TODO:
 
@@ -39,7 +40,7 @@ global_output_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult
 set -x
 
 # popu_symbols="WAF CAF EAF WAF_CAF_EAF SAM_WAF_CAF_EAF_SAS_WSEA_ESEA_OCE"
-popu_symbols="EAF"
+popu_symbols="WAF_CAF_EAF"
 for popu_symbol in $(echo ${popu_symbols} | tr " " "\n"); do
     popu_output_dir=$global_output_dir/$popu_symbol
     mkdir -p $popu_output_dir
@@ -47,6 +48,6 @@ for popu_symbol in $(echo ${popu_symbols} | tr " " "\n"); do
     # get_sample_list $popu_symbol
     # extract_popu_vcf $popu_output_dir
     # check_variants
-    # compute_mutation_density $popu_symbol
-    plot_mutation_density
+    compute_mutation_density $popu_symbol
+    # plot_mutation_density
 done

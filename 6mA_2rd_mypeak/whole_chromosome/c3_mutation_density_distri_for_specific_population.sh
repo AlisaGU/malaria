@@ -19,19 +19,8 @@ compute_mutation_density() {
     popu_symbol=$1
     $code_dir/s3_3_compare_chrom.sh $popu_symbol
 }
-
-check_variants() {
-    for chrom in $(echo "01 02 03 04 05 06 07 08 09 10 11 12 13 14" | tr " " "\n"); do
-        cat $code_dir/s3_2_2_check_variant.sh | sed "s/chrom_template/$chrom/g" | sed "s/popu_template/$popu_symbol/g" >$code_dir/${popu_symbol}.$chrom.sh
-        sbatch $code_dir/${popu_symbol}.$chrom.sh
-    done
-}
-
-plot_mutation_density() {
-    $code_dir/ss3_3_1_plot.R_CAF $popu_output_dir/mutation_density $popu_symbol
-}
 # VARIABLE NAMING TODO:
-code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd"
+code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd/whole_chromosome"
 global_output_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation"
 # VARIABLE NAMING for test module TODO:
 
@@ -46,7 +35,5 @@ for popu_symbol in $(echo ${popu_symbols} | tr " " "\n"); do
 
     # get_sample_list $popu_symbol
     # extract_popu_vcf $popu_output_dir
-    # check_variants
-    # compute_mutation_density $popu_symbol
-    plot_mutation_density
+    compute_mutation_density $popu_symbol
 done

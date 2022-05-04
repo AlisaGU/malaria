@@ -34,19 +34,19 @@ bedmap="/picb/evolgen/users/gushanshan/software/bedops/bin/bedmap"
 
 # PROCESS TODO:
 set -x
-# $bedtools complement  -i $peak_bed -g $chrom_len -L > $nopeak_bed # 非peak区位置
-# $code_dir/s4_create_bed_for_genomic_features.R $ref_anno $ref_dir/"anno"
-# $bedtools flank -i $genes_bed -g $chrom_len -l 200 -r 0 -s > $promoters_bed
-# cat $promoters_bed $genes_bed | $bedtools sort -i > $nonintergenic_bed
-# $bedtools complement -i $nonintergenic_bed -g $chrom_len -L > $intergenic_bed
+$bedtools complement -i $peak_bed -g $chrom_len -L >$nopeak_bed # 非peak区位置
+$code_dir/s4_create_bed_for_genomic_features.R $ref_anno $ref_dir/"anno"
+$bedtools flank -i $genes_bed -g $chrom_len -l 200 -r 0 -s >$promoters_bed
+cat $promoters_bed $genes_bed | $bedtools sort -i >$nonintergenic_bed
+$bedtools complement -i $nonintergenic_bed -g $chrom_len -L >$intergenic_bed
 
-# $bedtools intersect -a $peak_bed -b $intergenic_bed | awk '{name="peak"NR;print $1"\t"$2"\t"$3"\t",name,"\t",".","\t","."}' | sort -k1,1 -k2,2n >$intergenic_peak_bed
-# $bedmap --echo --delim '\t' peak_bed $intergenic_bed >$macs2_out_dir/a
-# $bedtools intersect -a $nopeak_bed -b $intergenic_bed | awk '{name="nopeak"NR;print $1"\t"$2"\t"$3"\t",name,"\t",".","\t","."}' | sort -k1,1 -k2,2n >$intergenic_nopeak_bed
+$bedtools intersect -a $peak_bed -b $intergenic_bed | awk '{name="peak"NR;print $1"\t"$2"\t"$3"\t",name,"\t",".","\t","."}' | sort -k1,1 -k2,2n >$intergenic_peak_bed
+# $bedmap --echo --delim '\t' $peak_bed $intergenic_bed >$macs2_out_dir/a # this line is deprecated
+$bedtools intersect -a $nopeak_bed -b $intergenic_bed | awk '{name="nopeak"NR;print $1"\t"$2"\t"$3"\t",name,"\t",".","\t","."}' | sort -k1,1 -k2,2n >$intergenic_nopeak_bed
 
-# $bedtools closest -a $intergenic_peak_bed -b $intergenic_nopeak_bed -io -k 10 -d | awk '$13<=10000{print $0"\t"$9-$8}' >$macs2_out_dir/a
-# $code_dir/s4_choose_best_nopeak.R $macs2_out_dir/a $macs2_out_dir/b
-# sort -k1,1 -k2,2n $macs2_out_dir/b >$intergenic_nopeak_closest_to_peak_bed
-# rm -rf $macs2_out_dir/a $macs2_out_dir/b
+$bedtools closest -a $intergenic_peak_bed -b $intergenic_nopeak_bed -io -k 10 -d | awk '$13<=10000{print $0"\t"$9-$8}' >$macs2_out_dir/a
+$code_dir/s4_choose_best_nopeak.R $macs2_out_dir/a $macs2_out_dir/b
+sort -k1,1 -k2,2n $macs2_out_dir/b >$intergenic_nopeak_closest_to_peak_bed
+rm -rf $macs2_out_dir/a $macs2_out_dir/b
 
 extract_vcf

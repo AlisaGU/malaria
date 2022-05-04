@@ -23,6 +23,10 @@ get_effective_genome_size() {
 call_peak() {
     $macs2 callpeak -t $treatment_sort_bam -c $input_sort_bam -f BAMPE -g 23008401 -n 3D7_2rd --outdir $bam_dir/macs2_output --bdg --trackline 2>$bam_dir/macs2_output/macs2.log
 }
+
+peak_process() {
+    $code_dir/s2_1_peak_process.sh
+}
 export -f dedup
 # VARIABLE NAMING TODO:
 export bam_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd"
@@ -34,7 +38,7 @@ export sambamba="/home/gushanshan/anaconda3/envs/raw_read_to_snp_calling/bin/sam
 export parallel="/home/gushanshan/anaconda3/envs/vscode_r/bin/parallel"
 samtools="/picb/evolgen/users/gushanshan/GenomeAnnotation/samtools/samtools-1.10/samtools_install/bin/samtools"
 macs2="/home/gushanshan/anaconda3/envs/vscode_r/bin/macs2"
-code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd"
+code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd/whole_chromosome"
 # VARIABLE NAMING for test module TODO:
 
 # PROCESS TODO:
@@ -45,6 +49,5 @@ all_input=$(ls $bam_dir/*.bam)
 
 # effective_genome_size=`get_effective_genome_size` # pf 3D7 effective genome size = 23008401 bp
 
-call_peak
-
-$code_dir/s2_1_peak_process.sh
+# call_peak
+peak_process

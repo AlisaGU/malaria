@@ -11,7 +11,7 @@ chrom=$1
 
 pf6_variant_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/pf6"
 motif_analysis_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_motif"
-code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd"
+code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd/whole_chromosome"
 
 WSEA_samplelist=$motif_analysis_dir/"WSEA.sample.list"
 

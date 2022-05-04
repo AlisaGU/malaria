@@ -10,7 +10,7 @@
 chrom=$1
 popu_output_dir=$2
 
-code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd"
+code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd/whole_chromosome"
 pf6_variant_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/pf6"
 
 popu_symbol=$(basename $popu_output_dir)
@@ -22,10 +22,14 @@ popu_PASS_variant=$popu_variant_dir/"${popu_symbol}_PASS_${chrom}.vcf.gz"
 popu_polysite_bed=$popu_variant_dir/"${popu_symbol}_PASS_${chrom}_polysite.bed"
 popu_snp_bed=$popu_variant_dir/${popu_symbol}_PASS_${chrom}_snp_polysite.bed
 popu_indel_bed=$popu_variant_dir/${popu_symbol}_PASS_${chrom}_indel_polysite.bed
+popu_transition_bed=$popu_variant_dir/${popu_symbol}_PASS_${chrom}_ts_polysite.bed
+popu_transversion_bed=$popu_variant_dir/${popu_symbol}_PASS_${chrom}_tv_polysite.bed
 
 popu_polymorphic_variant=$popu_variant_dir/"${popu_symbol}_polymor_${chrom}.vcf"
 popu_snp=$popu_variant_dir/"${popu_symbol}_snp_${chrom}.vcf.gz"
 popu_indel=$popu_variant_dir/"${popu_symbol}_indel_${chrom}.vcf.gz"
+popu_transition=$popu_variant_dir/"${popu_symbol}_ts_${chrom}.vcf.gz"
+popu_transversion=$popu_variant_dir/"${popu_symbol}_tv_${chrom}.vcf.gz"
 
 bcftools="/picb/evolgen/users/gushanshan/GenomeAnnotation/bcftools/bcftools-1.10.2/bcftools_install/bin/bcftools"
 tabix="/picb/evolgen/users/gushanshan/GenomeAnnotation/htslib/htslib-1.10.2/htslib_install/bin/tabix"
@@ -45,18 +49,26 @@ set -x
 # rm -rf $popu_polymorphic_variant
 # $bcftools view -h $popu_PASS_variant >$popu_polymorphic_variant
 # $bcftools view -H $popu_PASS_variant | csvtk grep -H -t -f 2 -P polysite >>$popu_polymorphic_variant
-$bgzip $popu_polymorphic_variant
-rm -rf polysite
-$tabix ${popu_polymorphic_variant}.gz
+# $bgzip $popu_polymorphic_variant
+# rm -rf polysite
+# $tabix ${popu_polymorphic_variant}.gz
 
-$bcftools view --types "snps" -O z -o $popu_snp --threads 4 ${popu_polymorphic_variant}.gz
-$tabix $popu_snp
-$bcftools view -H $popu_snp | awk '{print $2}' >polysite
-csvtk grep -H -t -f 3 -P polysite $popu_polysite_bed >$popu_snp_bed
+# $bcftools view --types "snps" -O z -o $popu_snp --threads 4 ${popu_polymorphic_variant}.gz
+# $tabix $popu_snp
+# $bcftools view -H $popu_snp | awk '{print $2}' >polysite
+# csvtk grep -H -t -f 3 -P polysite $popu_polysite_bed >$popu_snp_bed
+# rm -rf polysite
+
+# $bcftools view --types "indels" -O z -o $popu_indel --threads 4 ${popu_polymorphic_variant}.gz
+# $tabix $popu_indel
+# $bcftools view -H $popu_indel | awk '{print $2}' >polysite
+# csvtk grep -H -t -f 3 -P polysite $popu_polysite_bed >$popu_indel_bed
+# rm -rf polysite
+
+$bcftools view -H $popu_snp | awk -F '\t' '(($4 == "A" && $5 == "G") || ($4 == "G" && $5 == "A") || ($4 == "C" && $5 == "T") || ($4 == "T" && $5 == "C"))' | awk '{print $2}' >polysite
+csvtk grep -H -t -f 3 -P polysite $popu_polysite_bed >$popu_transition_bed
 rm -rf polysite
 
-$bcftools view --types "indels" -O z -o $popu_indel --threads 4 ${popu_polymorphic_variant}.gz
-$tabix $popu_indel
-$bcftools view -H $popu_indel | awk '{print $2}' >polysite
-csvtk grep -H -t -f 3 -P polysite $popu_polysite_bed >$popu_indel_bed
+$bcftools view -H $popu_snp | awk -F '\t' '(($4 == "A" && $5 == "T") || ($4 == "A" && $5 == "C") || ($4 == "G" && $5 == "T") || ($4 == "G" && $5 == "C") || ($4 == "C" && $5 == "A") || ($4 == "C" && $5 == "G") || ($4 == "T" && $5 == "A") || ($4 == "T" && $5 == "G"))' | awk '{print $2}' >polysite
+csvtk grep -H -t -f 3 -P polysite $popu_polysite_bed >$popu_transversion_bed
 rm -rf polysite
