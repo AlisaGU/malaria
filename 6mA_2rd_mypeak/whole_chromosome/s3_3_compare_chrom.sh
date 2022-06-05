@@ -112,8 +112,8 @@ mkdir -p $mutation_density_dir
 get_average_variant_count "allvar"
 get_average_variant_count "snps"
 get_average_variant_count "indels"
-get_average_variant_count "transition"
-get_average_variant_count "transversion"
+# get_average_variant_count "transition"
+# get_average_variant_count "transversion"
 # $code_dir/s2_get_ts_tv_ratio_each_popu.R $popu_symbol
 get_average_variant_count "A2G"
 get_average_variant_count "G2A"

@@ -1,0 +1,173 @@
+#!/home/gushanshan/anaconda3/envs/vscode_r/bin/Rscript
+# 1. packages and external scripts ----------------------------------------
+library(ggplot2)
+library(ggsignif)
+library(dplyr)
+library(ggpubr)
+library(grid)
+library(patchwork)
+library(ggrepel)
+library(RColorBrewer)
+library(data.table)
+# 2. functions ------------------------------------------------------------
+get_data_for_plot <- function(dataname = NULL) {
+    data <- read.table(dataname, stringsAsFactors = F, sep = " ")
+    colnames(data) <- c(
+        "nopeak", "central_nopeak",
+        paste("relative", c(0.01, 0.05, 0.1, 0.2, 0.5), sep = ""),
+        paste("absolute", c(10, 30, 50, 100, 200), sep = "")
+    )
+    rownames(data) <- paste("chrom", 1:14, sep = "")
+
+    data_for_plot <- data.frame(
+        value = unlist(data),
+        chrom = rep(rownames(data), times = ncol(data)),
+        source = rep(colnames(data), each = nrow(data))
+    )
+    a <- gsub("chrom", "", data_for_plot$chrom)
+    a[a != "1"] <- ""
+    data_for_plot$label <- a
+    return(data_for_plot)
+}
+
+
+plot_motif_count <- function(data_for_plot = NULL, sig_y = NULL, y_min = NULL, y_max = NULL, label = NULL) {
+    p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add = "jitter", add.params = list(size = 3)) +
+        stat_compare_means(aes(group = source),
+            ref.group = "nopeak",
+            label = "p.signif", paired = T, label.y = sig_y, size = 10
+        ) +
+        scale_color_manual(values = color_value) +
+        scale_x_discrete(labels = c("control", "control(500)", "1%", "5%", "10%", "20%", "50%", "10bp", "30bp", "50bp", "100bp", "200bp")) +
+        # geom_segment(aes(x = 2.0, xend = 6, y = line_y, yend = line_y), col = "#41ab5d") +
+        # geom_segment(aes(x = 7.0, xend = 11, y = line_y, yend = line_y), col = "#fd8d3c") +
+        # annotate("text", label = "Proportion summit", x = 4, y = text_y, size = 24 / .pt) +
+        # annotate("text", label = "Absolute summit", x = 9, y = text_y, size = 24 / .pt) +
+        scale_y_continuous(expand = c(0, 0)) +
+        coord_cartesian(ylim = c(y_min, y_max)) +
+        labs(y = "Motif average count") +
+        theme_bw() +
+        theme(
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_text(size = 20, color = "black", angle = 30, hjust = 0.7, vjust = 0.7),
+            axis.text.y = element_text(size = 20, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 24, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 28, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.2, 0.2, 0.2, "cm")
+        )
+    if (label == F) {
+        return(p)
+    } else if (label == T) {
+        p1 <- p + geom_text_repel(aes(label = label), data_for_plot,
+            size = 4, box.padding = 0.5, point.padding = 0.08,
+            min.segment.length = 0.05, segment.color = "black", show.legend = F, max.overlaps = 20
+        )
+        return(p1)
+    }
+    return(p)
+}
+
+get_data_for_plot_sliding_window <- function(dataname = NULL) {
+    data <- fread(dataname, stringsAsFactors = F, sep = " ", select = 1:12)
+    colnames(data) <- c("nopeak", "central_nopeak", paste("w", 1:10, sep = ""))
+    rownames(data) <- paste("chrom", 1:14, sep = "")
+
+    data_for_plot <- data.frame(
+        value = unlist(data),
+        chrom = rep(rownames(data), times = ncol(data)),
+        source = rep(colnames(data), each = nrow(data))
+    )
+    a <- gsub("chrom", "", data_for_plot$chrom)
+    a[a != "1"] <- ""
+    data_for_plot$label <- a
+    return(data_for_plot)
+}
+
+plot_mutation_density_sliding_window <- function(data_for_plot = NULL, sig_y = NULL, y_min = NULL, y_max = NULL, ylabel = NULL, label = NULL, xlabel = NULL) {
+    # stat.test <- compare_means(
+    #     value ~ source,
+    #     data = subset(data_for_plot, source == "nopeak" | source == "w1"),
+    #     method = "t.test", paired = T
+    # )
+    # stat.test <- stat.test %>% mutate(y.position = sig_y)
+
+    p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add = "jitter", add.params = list(size = 3)) +
+        # stat_pvalue_manual(data = stat.test, label = "p = {p.format}", size = 10, remove.bracket = T) +
+        stat_compare_means(aes(group = source),
+            ref.group = "nopeak",
+            label = "p.signif", paired = T, label.y = sig_y, size = 10
+        ) +
+        scale_color_manual(values = color_value_sliding_window) +
+        # geom_smooth(data = subset(data_for_plot, source != "nopeak"), method = "loess", se = FALSE, aes(group = 1)) +
+        scale_x_discrete(labels = c("control", "control(500)", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%", "45%", "50%")) +
+        scale_y_continuous(expand = c(0, 0)) +
+        coord_cartesian(ylim = c(y_min, y_max)) +
+        labs(y = "Motif average count") +
+        theme_bw() +
+        theme(
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_text(size = 20, color = "black", angle = 30, hjust = 0.7, vjust = 0.7),
+            axis.text.y = element_text(size = 20, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 24, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 28, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm")
+        )
+    if (label == T) {
+        p1 <- p + geom_text_repel(aes(label = label), data_for_plot,
+            size = 4, box.padding = 0.5, point.padding = 0.08,
+            min.segment.length = 0.05, segment.color = "black", show.legend = F, max.overlaps = 20
+        )
+    }
+    # if (xlabel == TRUE) {
+    #     p <- p + theme(axis.text.x = element_text(size = 24, color = "black", angle = 45, hjust = 0.7, vjust = 0.7))
+    # }
+    return(p)
+}
+# 3. input ----------------------------------------------------------------
+setwd("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/WSEA/motif_2/motif_count")
+color_value <- c(
+    "nopeak" = "#868686", "central_nopeak" = "#555454", "relative0.01" = "#005a32", "relative0.05" = "#238443",
+    "relative0.1" = "#41ab5d", "relative0.2" = "#78c679", "relative0.5" = "#addd8e",
+    "absolute10" = "#a63603", "absolute30" = "#e6550d", "absolute50" = "#fd8d3c",
+    "absolute100" = "#fdbe85", "absolute200" = "#feedde"
+)
+
+cols <- brewer.pal(3, "YlOrRd")
+pal <- colorRampPalette(cols)
+mycolors <- rev(pal(10))
+color_value_sliding_window <- c("#868686", "#555454", mycolors)
+names(color_value_sliding_window) <- c("control", "central_nopeak", paste("w", 1:10, sep = ""))
+# 4. variable setting of test module---------------------------------------
+
+
+# 5. process --------------------------------------------------------------
+data <- get_data_for_plot(dataname = "motif_count2")
+# motif_1
+# plot_motif_count(data_for_plot = data, y_min = 0, y_max = 0.0038, label = TRUE)
+# motif_2
+plot_motif_count(data_for_plot = data, sig_y = 0.048, y_min = 0, y_max = 0.051, label = TRUE)
+ggsave("motif_count_nopeak_central.pdf", height = 7, width = 7)
+ggsave("motif_count_nopeak_central.jpg", height = 7, width = 10)
+
+
+data <- get_data_for_plot_sliding_window(dataname = "motif_count2_sliding_window")
+# motif_1
+# plot_motif_count(data_for_plot = data, y_min = 0, y_max = 0.0038, label = TRUE)
+# motif_2
+plot_mutation_density_sliding_window(data_for_plot = data, sig_y = 0.048, y_min = 0, y_max = 0.051, label = TRUE)
+ggsave("motif_count_nopeak_central_sliding_window.pdf", height = 7, width = 7)
+ggsave("motif_count_nopeak_central_sliding_window.jpg", height = 7, width = 10)

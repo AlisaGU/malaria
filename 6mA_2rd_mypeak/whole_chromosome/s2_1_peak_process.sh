@@ -3,6 +3,8 @@
 #SBATCH -A evolgen-grp
 #SBATCH -p evolgen
 #SBATCH -o %x-%j.out
+#SBATCH --error=%x-%j.err
+
 # FUNCTIONS TODO:
 select_chrom_peak_nopeak_bed() {
     # 根据染色体，将6mA的peak（或nopeak）位置分为14个小文件
@@ -69,54 +71,35 @@ get_peak_submit_flank_region_pos_for_chrom() {
     $code_dir/ss2_1_1_get_peak_submit_flank_pos.R $chrom $peak_pos $flank_length_type $flank_length $treatment_level $control_level $output
 }
 
-# get_average_variant_count() {
-#     var_type=$1
+get_sliding_window() {
+    relative="0.05"
+    for chrom in $(echo $autosomes | tr " " "\n"); do
+        get_sliding_window_for_chrom $chrom "relative" $relative
+    done
 
-#     mean_variant_count=$chrom_bed_dir/${var_type}_mean_variant_count
-#     rm -rf $mean_variant_count
+    # absolute="0.05"
+    # for chrom in $(echo $autosomes | tr " " "\n"); do
+    #     get_sliding_window_for_chrom $chrom "relative" $relative
+    # done
+}
 
-#     for chrom in $(echo $autosomes | tr " " "\n"); do
-#         chrom_var_count=""
+get_sliding_window_for_chrom() {
+    chrom=$1
+    flank_length_type=$2
+    flank_length=$3
+    peak_pos=$chrom_bed_dir/${chrom}.peak.bed
+    treatment_level=$modifi_level_dir/${chrom}.treat.bed
+    control_level=$modifi_level_dir/${chrom}.cont.bed
 
-#         regions="$chrom_bed_dir/${chrom}.nopeak.bed"
-#         for por in $(echo $relative_por | tr " " "\n"); do
-#             regions+=" $chrom_bed_dir/relative.${por}/${chrom}.peak.relative.${por}.bed"
-#         done
-#         for len in $(echo $absolute_len | tr " " "\n"); do
-#             regions+=" $chrom_bed_dir/absolute.${len}/${chrom}.peak.absolute.${len}.bed"
-#         done
+    output_dir=$chrom_bed_dir/sliding_window/${flank_length_type}.${flank_length}/${chrom}
+    mkdir -p $output_dir
+    $code_dir/ss2_1_2_get_peak_submit_sliding_window_pos.R $chrom $peak_pos $flank_length_type $flank_length $treatment_level $control_level $output_dir
 
-#         for region_bed in $(echo $regions | tr " " "\n"); do
-#             chrom_var_count+=" $(get_average_variant_count_for_chrom $chrom $region_bed)"
-#         done
-#         echo $chrom_var_count >>$mean_variant_count
-#     done
-#     # $code_dir/s6_plot.R $mean_variant_count
-# }
+    # output_dir=$chrom_bed_dir/sliding_window_noCollapseWindow/${flank_length_type}.${flank_length}/${chrom}
+    # mkdir -p $output_dir
+    # $code_dir/ss2_1_2_get_peak_submit_sliding_window_pos_no_collapse_window.R $chrom $peak_pos $flank_length_type $flank_length $treatment_level $control_level $output_dir
 
-# get_average_variant_count_for_chrom() {
-#     chrom=$1
-#     region_bed=$2
-#     chrom_number=$(echo $chrom | sed 's/Pf3D7_//g' | sed 's/_v3//g')
-
-#     chrom_mutation_count_bed=""
-#     if [ $var_type == "allvar" ]; then
-#         chrom_mutation_count_bed=$variant_dir/WSEA_PASS_${chrom_number}_polysite.bed
-#     elif [ $var_type == "snps" ]; then
-#         chrom_mutation_count_bed=$variant_dir/WSEA_PASS_${chrom_number}_snp_polysite.bed
-#     elif [ $var_type == "indels" ]; then
-#         chrom_mutation_count_bed=$variant_dir/WSEA_PASS_${chrom_number}_indel_polysite.bed
-#     fi
-
-#     chrom_region_len=$(awk '{print $3-$2}' $region_bed | awk '{s+=$1} END {print s}')
-#     chrom_mutation_count=$($bedtools intersect -a $chrom_mutation_count_bed -b $region_bed | awk '{print $4}' | awk '{s+=$1} END {print s}')
-#     chrom_region_mutation_count_mean=$(echo "scale=4;${chrom_mutation_count}/${chrom_region_len}" | bc)
-#     echo $chrom_region_mutation_count_mean
-# }
-
-# plot_mutation_density() {
-#     $code_dir/s6_plot.R
-# }
+}
 # VARIABLE NAMING TODO:
 code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd/whole_chromosome"
 macs2_out_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output"
@@ -143,12 +126,14 @@ bedtools="/picb/evolgen/users/gushanshan/software/bedtools/bedtools"
 # VARIABLE NAMING for test module TODO:
 
 # PROCESS TODO:
-set -x
-mkdir -p $chrom_bed_dir $modifi_level_dir
+# set -x
+# mkdir -p $chrom_bed_dir $modifi_level_dir
 # awk 'NR>1{print $1"\t"$2"\t"$3}' $macs2_peak_info | sort -k1,1 -k2,2n -u >$peak_bed
 # $bedtools complement -i $peak_bed -g $chrom_len -L >$nopeak_bed # 非peak区位置
 # $bedtools intersect -a $peak_bed -b $core_bed >$core_peak_bed
 # $bedtools intersect -a $nopeak_bed -b $core_bed >$core_nopeak_bed
-select_chrom_peak_nopeak_bed
-get_chrom_treatment_control_6malevel_bed
-get_peak_submit_flank_region_pos
+# select_chrom_peak_nopeak_bed
+# get_chrom_treatment_control_6malevel_bed
+# get_peak_submit_flank_region_pos
+get_sliding_window
+sed -i "s/e+05/00000/g" $(find ./ -name *bed)

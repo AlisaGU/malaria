@@ -69,6 +69,15 @@ get_block_bed_for_motif() {
         sbatch $code_dir/s2_get_block_bed_for_motif_one_chrom.sh_${bed}
     done
 }
+
+select_nopeak_region_away_from_peak() {
+    cd $macs2_two_outgroup_consistent_dir
+    for chrom in $(echo $autosomes | tr " " "\n"); do
+        # awk '{print $0,$3-$2}' $chrom.nopeak.bed | awk '$4>200{s=$2+100;e=$3-100;print $1"\t"s"\t"e}' >$chrom.remove_margin_100_nopeak.bed
+        awk '{s=$2-500;e=$3+500;print $1"\t"s"\t"e}' $chrom.peak.bed | $bedtools subtract -a $chrom.nopeak.bed -b stdin >$chrom.remove_margin_500_nopeak.bed
+    done
+    cd -
+}
 # VARIABLE NAMING TODO:
 code_dir="/picb/evolgen2/users/gushanshan/projects/malaria/code/6mA_2rd_mypeak/two_outgroup_3D7"
 reference_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/ref_genome/pf_3D7"
@@ -104,7 +113,8 @@ seqkit="/picb/evolgen/users/gushanshan/GenomeAnnotation/seqkit/seqkit"
 # mkdir -p $two_outgroup_working_dir $macs2_two_outgroup_consistent_dir
 # get_two_outgroup_not_consistent_region_in_core
 # get_two_outgroup_consistent_region_in_core
-get_peak_nopeak_in_core_consistent_region
-extract_peak_seq_in_core_consistent_region
+# get_peak_nopeak_in_core_consistent_region
+# extract_peak_seq_in_core_consistent_region
 locate_motif
 get_block_bed_for_motif
+select_nopeak_region_away_from_peak

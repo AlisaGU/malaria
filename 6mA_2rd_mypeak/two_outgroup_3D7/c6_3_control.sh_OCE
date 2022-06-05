@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH -n 4
+#SBATCH -A evolgen-grp
+#SBATCH -p evolgen
+#SBATCH -o %x-%j.out
+#SBATCH --error=%x-%j.err
+#SBATCH --mem=50G
+
+# FUNCTIONS TODO:
+
+# VARIABLE NAMING TODO:
+popu_symbol="OCE"
+code_dir="/picb/evolgen2/users/gushanshan/projects/malaria/code/6mA_2rd/two_outgroup_3D7"
+# VARIABLE NAMING for test module TODO:
+
+# PROCESS TODO:
+# set -x
+
+$code_dir/s6_3_control.sh $popu_symbol

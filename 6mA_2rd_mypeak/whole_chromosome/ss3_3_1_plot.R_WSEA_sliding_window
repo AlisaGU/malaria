@@ -1,0 +1,511 @@
+#!/home/gushanshan/anaconda3/envs/vscode_r/bin/Rscript
+# 1. packages and external scripts ---------------------------------------- TODO:
+library(ggplot2)
+library(ggsignif)
+library(dplyr)
+library(ggpubr)
+library(grid)
+library(patchwork)
+library(ggrepel)
+library(RColorBrewer)
+library(data.table)
+# 2. functions ------------------------------------------------------------ TODO:
+get_data_for_plot <- function(dataname = NULL) {
+    data <- fread(dataname, stringsAsFactors = F, sep = " ", select = 1:11)
+    colnames(data) <- c("nopeak", paste("w", 1:10, sep = ""))
+    rownames(data) <- paste("chrom", 1:14, sep = "")
+
+    data_for_plot <- data.frame(
+        value = unlist(data),
+        chrom = rep(rownames(data), times = ncol(data)),
+        source = rep(colnames(data), each = nrow(data))
+    )
+    a <- gsub("chrom", "", data_for_plot$chrom)
+    a[a != "1"] <- ""
+    data_for_plot$label <- a
+    return(data_for_plot)
+}
+
+get_data_for_plot1 <- function(dataname = NULL) {
+    data <- fread(dataname, stringsAsFactors = F, sep = " ", select = 1:2)
+    colnames(data) <- c("nopeak", "w1")
+    rownames(data) <- paste("chrom", 1:14, sep = "")
+
+    data_for_plot <- data.frame(
+        value = unlist(data),
+        chrom = rep(rownames(data), times = ncol(data)),
+        source = rep(colnames(data), each = nrow(data))
+    )
+    a <- gsub("chrom", "", data_for_plot$chrom)
+    a[a != "1"] <- ""
+    data_for_plot$label <- a
+    return(data_for_plot)
+}
+
+get_data_for_plot_for_control <- function(dataname = NULL) {
+    data <- fread(dataname, stringsAsFactors = F, sep = " ")
+    colnames(data) <- c("nopeak", "nopeak_motif", "nopeak500_motif")
+    rownames(data) <- paste("chrom", 1:14, sep = "")
+
+    data_for_plot <- data.frame(
+        value = unlist(data),
+        chrom = rep(rownames(data), times = ncol(data)),
+        source = rep(colnames(data), each = nrow(data))
+    )
+    a <- gsub("chrom", "", data_for_plot$chrom)
+    a[a != "1"] <- ""
+    data_for_plot$label <- a
+    return(data_for_plot)
+}
+
+get_data_for_plot_for_peak <- function(dataname = NULL) {
+    data <- fread(dataname, stringsAsFactors = F, sep = " ")
+    colnames(data) <- c("peak", "peak_motif")
+    rownames(data) <- paste("chrom", 1:14, sep = "")
+
+    data_for_plot <- data.frame(
+        value = unlist(data),
+        chrom = rep(rownames(data), times = ncol(data)),
+        source = rep(colnames(data), each = nrow(data))
+    )
+    a <- gsub("chrom", "", data_for_plot$chrom)
+    a[a != "1"] <- ""
+    data_for_plot$label <- a
+    return(data_for_plot)
+}
+
+get_data_for_plot_3_control <- function(dataname = NULL) {
+    data <- fread(dataname, stringsAsFactors = F, sep = " ")
+    colnames(data) <- c("nopeak", "nopeak_motif", "nopeak500_motif", paste("w", 1:10, sep = ""))
+    rownames(data) <- paste("chrom", 1:14, sep = "")
+
+    data_for_plot <- data.frame(
+        value = unlist(data),
+        chrom = rep(rownames(data), times = ncol(data)),
+        source = rep(colnames(data), each = nrow(data))
+    )
+    a <- gsub("chrom", "", data_for_plot$chrom)
+    a[a != "1"] <- ""
+    data_for_plot$label <- a
+    return(data_for_plot)
+}
+
+plot_mutation_density <- function(data_for_plot = NULL, sig_y = NULL, y_min = NULL, y_max = NULL, ylabel = NULL, label = NULL, xlabel = NULL) {
+    stat.test <- compare_means(
+        value ~ source,
+        data = subset(data_for_plot, source == "nopeak" | source == "w1"),
+        method = "t.test", paired = T
+    )
+    stat.test <- stat.test %>% mutate(y.position = sig_y)
+
+    p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add = "jitter", add.params = list(size = 3)) +
+        stat_pvalue_manual(data = stat.test, label = "p = {p.format}", size = 10, remove.bracket = T) +
+        # stat_compare_means(aes(group = source),
+        #     ref.group = "nopeak",
+        #     label = "p.signif", paired = T, label.y = sig_y, size = 10
+        # ) +
+        scale_color_manual(values = color_value) +
+        # geom_smooth(data = subset(data_for_plot, source != "nopeak"), method = "loess", se = FALSE, aes(group = 1)) +
+        scale_x_discrete(labels = c("control", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%", "45%", "50%")) +
+        scale_y_continuous(expand = c(0, 0)) +
+        coord_cartesian(ylim = c(y_min, y_max)) +
+        labs(y = ylabel) +
+        theme_bw() +
+        theme(
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_blank(),
+            axis.text.y = element_text(size = 24, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 24, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 28, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm")
+        )
+    if (label == T) {
+        p1 <- p + geom_text_repel(aes(label = label), data_for_plot,
+            size = 4, box.padding = 0.5, point.padding = 0.08,
+            min.segment.length = 0.05, segment.color = "black", show.legend = F, max.overlaps = 20
+        )
+    }
+    if (xlabel == TRUE) {
+        p <- p + theme(axis.text.x = element_text(size = 24, color = "black", angle = 45, hjust = 0.7, vjust = 0.7))
+    }
+    return(p)
+}
+
+plot_mutation_density_for_control <- function(data_for_plot = NULL, sig_y = NULL, y_min = NULL, y_max = NULL, ylabel = NULL, label = NULL, xlabel = NULL) {
+    p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add = "jitter", add.params = list(size = 3)) +
+        # stat_pvalue_manual(data = stat.test, label = "p = {p.format}", size = 10, remove.bracket = T) +
+        stat_compare_means(
+            comparisons = list(c("nopeak", "nopeak_motif"), c("nopeak", "nopeak500_motif"), c("nopeak_motif", "nopeak500_motif")),
+            label = "p.signif", paired = T, size = 10
+        ) +
+        scale_color_manual(values = color_value_for_control) +
+        # geom_smooth(data = subset(data_for_plot, source != "nopeak"), method = "loess", se = FALSE, aes(group = 1)) +
+        scale_x_discrete(labels = c("nopeak", "nopeak_motif", "nopeak500_motif")) +
+        scale_y_continuous(expand = c(0, 0)) +
+        coord_cartesian(ylim = c(y_min, y_max)) +
+        labs(y = ylabel) +
+        theme_bw() +
+        theme(
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_blank(),
+            axis.text.y = element_text(size = 24, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 24, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 28, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm")
+        )
+    if (label == T) {
+        p1 <- p + geom_text_repel(aes(label = label), data_for_plot,
+            size = 4, box.padding = 0.5, point.padding = 0.08,
+            min.segment.length = 0.05, segment.color = "black", show.legend = F, max.overlaps = 20
+        )
+    }
+    if (xlabel == TRUE) {
+        p <- p + theme(axis.text.x = element_text(size = 24, color = "black", angle = 45, hjust = 0.7, vjust = 0.7))
+    }
+    return(p)
+}
+
+plot_mutation_density_for_peak <- function(data_for_plot = NULL, sig_y = NULL, y_min = NULL, y_max = NULL, ylabel = NULL, label = NULL, xlabel = NULL) {
+    p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add = "jitter", add.params = list(size = 3)) +
+        # stat_pvalue_manual(data = stat.test, label = "p = {p.format}", size = 10, remove.bracket = T) +
+        stat_compare_means(
+            comparisons = list(c("peak", "peak_motif")),
+            label = "p.signif", paired = T, size = 10
+        ) +
+        scale_color_manual(values = color_value_for_peak) +
+        # geom_smooth(data = subset(data_for_plot, source != "nopeak"), method = "loess", se = FALSE, aes(group = 1)) +
+        scale_x_discrete(labels = c("peak", "peak_motif")) +
+        scale_y_continuous(expand = c(0, 0)) +
+        coord_cartesian(ylim = c(y_min, y_max)) +
+        labs(y = ylabel) +
+        theme_bw() +
+        theme(
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_blank(),
+            axis.text.y = element_text(size = 24, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 24, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 28, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm")
+        )
+    if (label == T) {
+        p1 <- p + geom_text_repel(aes(label = label), data_for_plot,
+            size = 4, box.padding = 0.5, point.padding = 0.08,
+            min.segment.length = 0.05, segment.color = "black", show.legend = F, max.overlaps = 20
+        )
+    }
+    if (xlabel == TRUE) {
+        p <- p + theme(axis.text.x = element_text(size = 24, color = "black", angle = 45, hjust = 0.7, vjust = 0.7))
+    }
+    return(p)
+}
+
+plot_mutation_density_base <- function(data_for_plot = NULL, sig_y = NULL, y_min = NULL, y_max = NULL, ylabel = NULL, label = NULL, xlabel = NULL) {
+    stat.test <- compare_means(
+        value ~ source,
+        data = subset(data_for_plot, source == "nopeak" | source == "w1"),
+        method = "wilcox.test", paired = TRUE
+    )
+    stat.test <- stat.test %>% mutate(y.position = sig_y)
+    p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add = "jitter", add.params = list(size = 3)) +
+        stat_pvalue_manual(data = stat.test, label = "p = {p.format}", size = 10, remove.bracket = TRUE) +
+        scale_color_manual(values = color_value) +
+        scale_x_discrete(labels = c("control", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%", "45%", "50%")) +
+        scale_y_continuous(expand = c(0, 0)) +
+        coord_cartesian(ylim = c(y_min, y_max)) +
+        labs(y = ylabel) +
+        theme_bw() +
+        theme(
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_blank(),
+            axis.text.y = element_text(size = 24, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 24, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 28, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm")
+        )
+    if (label == TRUE) {
+        p <- p + geom_text_repel(aes(label = label), data_for_plot,
+            size = 4, box.padding = 0.5, point.padding = 0.08,
+            min.segment.length = 0.05, segment.color = "black", show.legend = F, max.overlaps = 100
+        )
+    }
+    if (xlabel == TRUE) {
+        p <- p + theme(axis.text.x = element_text(size = 24, color = "black", angle = 45, hjust = 0.7, vjust = 0.7))
+    }
+    return(p)
+}
+
+plot_mutation_density_base1 <- function(data_for_plot = NULL, sig_y = NULL, y_min = NULL, y_max = NULL, ylabel = NULL, label = NULL, xlabel = NULL) {
+    stat.test <- compare_means(
+        value ~ source,
+        data = subset(data_for_plot, source == "nopeak" | source == "w1"),
+        method = "wilcox.test", paired = TRUE
+    )
+    stat.test <- stat.test %>% mutate(y.position = sig_y)
+    p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add = "jitter", add.params = list(size = 3)) +
+        stat_pvalue_manual(data = stat.test, label = "p = {p.format}", size = 10, remove.bracket = TRUE) +
+        scale_color_manual(values = color_value) +
+        scale_x_discrete(labels = c("control", "absolute 10bp")) +
+        scale_y_continuous(expand = c(0, 0)) +
+        coord_cartesian(ylim = c(y_min, y_max)) +
+        labs(y = ylabel) +
+        theme_bw() +
+        theme(
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_blank(),
+            axis.text.y = element_text(size = 24, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 24, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 28, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm")
+        )
+    if (label == TRUE) {
+        p <- p + geom_text_repel(aes(label = label), data_for_plot,
+            size = 4, box.padding = 0.5, point.padding = 0.08,
+            min.segment.length = 0.05, segment.color = "black", show.legend = F, max.overlaps = 100
+        )
+    }
+    if (xlabel == TRUE) {
+        p <- p + theme(axis.text.x = element_text(size = 24, color = "black"))
+    }
+    return(p)
+}
+
+plot_N2N <- function(data_for_all_direc = NULL, y_pos = NULL,  nrow = NULL, ncol = NULL) {
+    anno_data_for_all_direc <- compare_means(value ~ source, group.by = "variant", data = data_for_all_direc) %>% mutate(y_pos = y_pos)
+    
+    p <- ggplot(data_for_all_direc, aes(x = source, y = value, color = source)) +
+        geom_boxplot(position = position_dodge()) +
+        geom_point(position = position_jitterdodge()) +
+        # stat_compare_means(aes(group = source),
+        #     ref.group = "w1",hide.ns=T,
+        #     label = "p.signif", paired = T, label.y = label.y, size = 10
+        # ) +
+        facet_wrap(~variant, nrow = nrow, ncol = ncol) +
+        scale_color_manual(values = color_value) +
+        scale_x_discrete(labels = c("Control", "C(motif)", "C500(motif)", rep("", 4), "W5", rep("", 4), "W10")) +
+        theme_bw()+
+    theme(
+        strip.background = element_rect(fill = mycolors[5]),
+        strip.text.x = element_text(size = 30),
+        panel.border = element_blank(),
+        # panel.grid = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text.x = element_text(size = 30, color = "black",angle = 45, hjust = 0.7, vjust = 0.7),
+        axis.text.y = element_text(size = 30, color = "black"),
+        plot.title = element_text(
+            colour = "black",
+            size = 24, vjust = 0.5, hjust = 0.5
+        ),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "None",
+        plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm"),
+        panel.spacing = unit(3, "lines")
+    )
+    return(p)
+}
+# 3. input ---------------------------------------------------------------- TODO:
+Args <- commandArgs()
+path <- Args[6]
+popu_symbol <- Args[7]
+# 4. variable setting of test module--------------------------------------- TODO:
+# path<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/WSEA/sliding_window/relative0.05/mutation_density_by_whole_chromosome_with_submit"
+# path<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/WSEA/sliding_window/relative0.05/base_proporation"
+# path<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/WSEA/sliding_window/absolute10/base_proporation"
+# popu_symbol<-"WSEA"
+# 5. process -------------------------------------------------------------- TODO:
+setwd(path)
+
+
+cols <- brewer.pal(3, "YlOrRd")
+pal <- colorRampPalette(cols)
+mycolors <- rev(pal(10))
+color_value <- c("#868686", mycolors)
+names(color_value) <- c("control", paste("w", 1:10, sep = ""))
+color_value_for_control <- c("nopeak" = "#868686", "nopeak_motif" = "#868686", "nopeak500_motif" = "#2f2f2f")
+color_value_for_peak <- c("peak" = "#F03B20", "peak_motif" = "#F03B20")
+
+variants_type <- c("allvar", "snps", "indels", "A2G", "A2T", "A2C", "T2G", "T2C", "T2A", "G2A", "G2T", "G2C", "C2A", "C2T", "C2G")
+data_for_plot <- lapply(variants_type, function(x) {
+    get_data_for_plot(paste0(x, "_mean_variant_count"))
+})
+names(data_for_plot) <- variants_type
+# relative 0.05
+all_p <- plot_mutation_density(data_for_plot = data_for_plot$allvar, sig_y = 0.16, y_min = 0.02, y_max = 0.17, ylabel = "All variants", label = F, xlabel = F)
+snp_p <- plot_mutation_density(data_for_plot = data_for_plot$snps, sig_y = 0.034, y_min = 0.007, y_max = 0.036, ylabel = "SNPs", label = F, xlabel = F)
+indel_p <- plot_mutation_density(data_for_plot = data_for_plot$indels, sig_y = 0.13, y_min = 0.02, y_max = 0.14, ylabel = "Indels", label = F, xlabel = TRUE)
+
+patch <- all_p / snp_p / indel_p
+patch +
+    plot_annotation(tag_levels = "A") &
+    theme(plot.tag = element_text(size = 32))
+ggsave("all_snp_indel_sliding_window_mutation_density.pdf", width = 10, height = 21)
+ggsave("all_snp_indel_sliding_window_mutation_density.jpg", width = 10, height = 21)
+
+all_p <- plot_mutation_density(data_for_plot = data_for_plot$allvar, sig_y = 0.16, y_min = 0.02, y_max = 0.17, ylabel = "All variants", label = T, xlabel = F)
+snp_p <- plot_mutation_density(data_for_plot = data_for_plot$snps, sig_y = 0.034, y_min = 0.007, y_max = 0.036, ylabel = "SNPs", label = T, xlabel = F)
+indel_p <- plot_mutation_density(data_for_plot = data_for_plot$indels, sig_y = 0.13, y_min = 0.02, y_max = 0.14, ylabel = "Indels", label = T, xlabel = TRUE)
+patch <- all_p / snp_p / indel_p
+patch +
+    plot_annotation(tag_levels = "A") &
+    theme(plot.tag = element_text(size = 32))
+ggsave("all_snp_indel_sliding_window_mutation_density_chr1.pdf", width = 10, height = 21)
+ggsave("all_snp_indel_sliding_window_mutation_density_chr1.jpg", width = 10, height = 21)
+
+
+data_for_all_direc <- data_for_plot[c("A2G", "A2T", "A2C", "T2G", "T2C", "T2A", "G2A", "G2T", "G2C", "C2A", "C2T", "C2G")]
+data_for_all_direc <- do.call(rbind, data_for_all_direc)
+data_for_all_direc$variant <- rep(c("A2G", "A2T", "A2C", "T2G", "T2C", "T2A", "G2A", "G2T", "G2C", "C2A", "C2T", "C2G"), each = 154)
+data_for_all_direc$source <- factor(data_for_all_direc$source, levels = c("nopeak", paste("w", 1:10, sep = "")))
+anno_data_for_all_direc <- compare_means(value ~ source, group.by = "variant", data = data_for_all_direc) %>% mutate(y_pos = 0.006)
+ggplot(data_for_all_direc, aes(x = source, y = value, color = source)) +
+    geom_boxplot(position = position_dodge()) +
+    geom_point(position = position_jitterdodge()) +
+    stat_compare_means(
+        # ref.group = "nopeak",
+        comparisons = list(c("nopeak", "w1")),
+        label = "p.signif", paired = T, label.y = 0.0055, size = 10
+    ) +
+    # stat_compare_means(label = "p.format",size=10,label.x=3) +
+    geom_smooth(data = subset(data_for_all_direc, source != "nopeak"), method = "loess", se = FALSE, aes(group = 1)) +
+    facet_wrap(~variant, nrow = 4, ncol = 3) +
+    scale_color_manual(values = color_value) +
+    scale_x_discrete(labels = c("Control", rep("", 4), "W5", rep("", 4), "W10")) +
+    theme_bw() +
+    theme(
+        strip.background = element_rect(fill = mycolors[5]),
+        strip.text.x = element_text(size = 30),
+        panel.border = element_blank(),
+        panel.grid = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text.x = element_text(size = 30, color = "black"),
+        axis.text.y = element_text(size = 30, color = "black"),
+        plot.title = element_text(
+            colour = "black",
+            size = 24, vjust = 0.5, hjust = 0.5
+        ),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "None",
+        plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm"),
+        panel.spacing = unit(3, "lines")
+    )
+
+
+ggsave("N2N.pdf", width = 21, height = 30)
+ggsave("N2N.jpg", width = 21, height = 30)
+
+bases <- c("A", "T", "C", "G")
+data_for_plot <- lapply(bases, function(x) {
+    get_data_for_plot(paste0(x, "_mean_proporation"))
+})
+names(data_for_plot) <- bases
+# relative 0.05
+A <- plot_mutation_density_base(data_for_plot = data_for_plot$A, sig_y = 0.32, y_min = 0.3, y_max = 0.45, ylabel = "A", label = TRUE, xlabel = F)
+T <- plot_mutation_density_base(data_for_plot = data_for_plot$T, sig_y = 0.32, y_min = 0.3, y_max = 0.45, ylabel = "T", label = TRUE, xlabel = F)
+C <- plot_mutation_density_base(data_for_plot = data_for_plot$C, sig_y = 0.13, y_min = 0.075, y_max = 0.15, ylabel = "C", label = TRUE, xlabel = TRUE)
+G <- plot_mutation_density_base(data_for_plot = data_for_plot$G, sig_y = 0.14, y_min = 0.075, y_max = 0.15, ylabel = "G", label = TRUE, xlabel = TRUE)
+patch <- (A | T) / (C | G)
+patch +
+    plot_annotation(tag_levels = "A") &
+    theme(plot.tag = element_text(size = 32))
+ggsave("base_pro.pdf", width = 18, height = 18)
+ggsave("base_pro.jpg", width = 18, height = 18)
+
+
+# absolute 10bp
+bases <- c("A", "T", "C", "G")
+data_for_plot <- lapply(bases, function(x) {
+    get_data_for_plot1(paste0(x, "_mean_proporation"))
+})
+names(data_for_plot) <- bases
+
+A <- plot_mutation_density_base1(data_for_plot = data_for_plot$A, sig_y = 0.32, y_min = 0.3, y_max = 0.45, ylabel = "A", label = TRUE, xlabel = F)
+T <- plot_mutation_density_base1(data_for_plot = data_for_plot$T, sig_y = 0.32, y_min = 0.3, y_max = 0.45, ylabel = "T", label = TRUE, xlabel = F)
+C <- plot_mutation_density_base1(data_for_plot = data_for_plot$C, sig_y = 0.13, y_min = 0.075, y_max = 0.15, ylabel = "C", label = TRUE, xlabel = TRUE)
+G <- plot_mutation_density_base1(data_for_plot = data_for_plot$G, sig_y = 0.14, y_min = 0.075, y_max = 0.15, ylabel = "G", label = TRUE, xlabel = TRUE)
+patch <- (A | T) / (C | G)
+patch +
+    plot_annotation(tag_levels = "A") &
+    theme(plot.tag = element_text(size = 32))
+ggsave("base_pro.pdf", width = 18, height = 18)
+ggsave("base_pro.jpg", width = 18, height = 18)
+
+
+data_for_plot <- get_data_for_plot_for_control(dataname = "snps_only_control_mean_variant_count")
+plot_mutation_density_for_control(data_for_plot = data_for_plot, sig_y = 0.014, y_min = 0, y_max = 0.018, ylabel = "SNPs", label = FALSE, xlabel = TRUE)
+ggsave("mutation_density_for_control.pdf", width = 7, height = 7)
+ggsave("mutation_density_for_control.jpg", width = 7, height = 7)
+
+
+data_for_plot <- get_data_for_plot_for_peak(dataname = "snps_only_peak_mean_variant_count")
+plot_mutation_density_for_peak(data_for_plot = data_for_plot, sig_y = 0.014, y_min = 0.01, y_max = 0.041, ylabel = "SNPs", label = FALSE, xlabel = TRUE)
+ggsave("mutation_density_for_peak.pdf", width = 7, height = 7)
+ggsave("mutation_density_for_peak.jpg", width = 7, height = 7)
+
+
+
+
+
+variants_type <- c("A2G", "A2T", "A2C", "T2G", "T2C", "T2A", "G2A", "G2T", "G2C", "C2A", "C2T", "C2G", "insertion", "deletion")
+data_for_plot <- lapply(variants_type, function(x) {
+    get_data_for_plot_3_control(paste0(x, "_mean_variant_count_3control"))
+})
+names(data_for_plot) <- variants_type
+color_value_3_control <- c(color_value, "nopeak_motif" = "#868686", "nopeak500_motif" = "#2f2f2f")
+
+data_for_all_direc <- do.call(rbind, data_for_plot[c("A2G", "A2T", "A2C", "T2G", "T2C", "T2A", "G2A", "G2T", "G2C", "C2A", "C2T", "C2G")])
+data_for_all_direc$variant <- rep(c("A2G", "A2T", "A2C", "T2G", "T2C", "T2A", "G2A", "G2T", "G2C", "C2A", "C2T", "C2G"), each = 182)
+data_for_all_direc$source <- factor(data_for_all_direc$source, levels = c("nopeak", "nopeak_motif", "nopeak500_motif", paste("w", 1:10, sep = "")))
+plot_N2N(data_for_all_direc = data_for_all_direc, y_pos = 0.05,  nrow = 4, ncol = 3)
+ggsave("N2N_3control.pdf", width = 21, height = 30)
+ggsave("N2N_3control.jpg", width = 21, height = 30)
+
+
+data_for_all_direc <- do.call(rbind, data_for_plot[c("insertion")])
+data_for_all_direc$variant <- rep(c("insertion"), each = 182)
+data_for_all_direc$source <- factor(data_for_all_direc$source, levels = c("nopeak", "nopeak_motif", "nopeak500_motif", paste("w", 1:10, sep = "")))
+plot_N2N(data_for_all_direc = data_for_all_direc, y_pos = 0.12, nrow = 2, ncol = 1)
+ggsave("insertion_3control.pdf", width = 7, height = 7)
+ggsave("insertion_3control.jpg", width = 7, height = 7)
+
+data_for_all_direc <- do.call(rbind, data_for_plot[c("deletion")])
+data_for_all_direc$variant <- rep(c("deletion"), each = 182)
+data_for_all_direc$source <- factor(data_for_all_direc$source, levels = c("nopeak", "nopeak_motif", "nopeak500_motif", paste("w", 1:10, sep = "")))
+plot_N2N(data_for_all_direc = data_for_all_direc, y_pos = 0.025,nrow = 2, ncol = 1)
+ggsave("deletion_3control.pdf", width = 7, height = 7)
+ggsave("deletion_3control.jpg", width = 7, height = 7)

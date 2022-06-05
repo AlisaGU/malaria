@@ -1,0 +1,171 @@
+#!/home/gushanshan/anaconda3/envs/vscode_r/bin/Rscript
+# 1. packages and external scripts ----------------------------------------
+library(data.table)
+library(ggplot2)
+library(ggsignif)
+library(dplyr)
+library(ggpubr)
+library(grid)
+library(patchwork)
+library(ggrepel)
+
+# 2. functions ------------------------------------------------------------
+get_data_for_plot <- function(popu_symbol = NULL, dataname = NULL, path = NULL) {
+    data_nopeak <- fread(paste0("central_motif_relative.0.1_mutation_density_base_count/", dataname, "_mean_variant_count"),
+        select = 1, stringsAsFactors = F
+    )
+    data_CM1 <- fread(paste0("central_motif_relative.0.1_mutation_density_base_count/", dataname, "_mean_variant_count"),
+        select = 2, stringsAsFactors = F
+    )
+    data_CM2 <- fread(paste0("central_motif_relative.0.2_mutation_density_base_count/", dataname, "_mean_variant_count"),
+        select = 2, stringsAsFactors = F
+    )
+    data_all_motifs <- fread(paste0("mutation_dentisy_two_outgroup_consistent/", dataname, "_mean_variant_count"),
+        select = 2, stringsAsFactors = F
+    )
+
+    result <- data.frame(
+        value = c(
+            unlist(data_nopeak), unlist(data_CM1),
+            unlist(data_CM2), unlist(data_all_motifs)
+        ), chrom = rep(paste("chrom", 1:14, sep = ""), times = 4),
+        source = rep(c("nopeak", "CM1", "CM2", "all_motifs"), each = 14)
+    )
+
+    a <- gsub("chrom", "", result$chrom)
+    a[a != "1"] <- ""
+    result$label <- a
+    return(result)
+}
+
+plot_mutation_density <- function(data_for_plot = NULL, sig_y = NULL, line_y = NULL, text_y = NULL, y_min = NULL, y_max = NULL, submit_type = NULL, ytitle = NULL, xlabel = NULL) {
+    p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add = "point", add.params = list(size = 3)) +
+        stat_compare_means(aes(group = source),
+            ref.group = "CM1", hide.ns = T,
+            label = "p.signif", paired = T, label.y = sig_y, size = 9
+        ) +
+        geom_point(data = data_for_plot[data_for_plot$label == "1", ], aes(x = source, y = value), color = rgb(0, 149, 249, maxColorValue = 255), size = 3) +
+        scale_color_manual(values = color_value) +
+        scale_x_discrete(labels = c("control", "10%", "20%", "all motifs")) +
+        geom_segment(aes(x = 2.0, xend = 4, y = line_y, yend = line_y), col = "#fe9929") +
+        # annotate("text", label = "Motif adjacent areas", x = 4.5, y = text_y, size = 24 / .pt) +
+        coord_cartesian(ylim = c(y_min, y_max)) +
+        labs(y = "") +
+        theme_bw() +
+        theme(
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.y = element_text(size = 24, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 28, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.text.x = element_blank(),
+            axis.title.y = element_text(size = 28, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.2, 0.3, 0.2, "cm")
+        )
+    if (!is.logical(submit_type)) {
+        p <- p + annotate("text", label = "Motif location", x = 3, y = text_y, size = 24 / .pt)
+    }
+    if (!is.logical(submit_type)) {
+        p <- p + labs(title = submit_type)
+    }
+    if (!is.logical(ytitle)) {
+        p <- p + labs(y = ytitle)
+    }
+    if (xlabel) {
+        p <- p + theme(axis.text.x = element_text(size = 24, color = "black", angle = 30, hjust = 0.7, vjust = 0.7))
+    }
+    return(p)
+}
+
+# 3. input ----------------------------------------------------------------
+popu_symbol <- "OCE"
+path <- paste0("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/", popu_symbol, "/motif")
+# 4. variable setting of test module---------------------------------------
+
+
+# 5. process --------------------------------------------------------------
+setwd(path)
+color_value <- c(
+    "nopeak" = "#868686",
+    "CM1" = "#d95f0e",
+    "CM2" = "#fe9929",
+    "all_motifs" = "#fed98e"
+)
+data <- list()
+for (variant_type in c("A2G", "G2A", "T2C", "C2T", "A2C", "A2T", "G2C", "G2T", "C2A", "C2G", "T2A", "T2G")) {
+    data[[popu_symbol]][[variant_type]] <- get_data_for_plot(popu = popu_symbol, dataname = variant_type, path = path)
+}
+
+A2G <- plot_mutation_density(
+    data_for_plot = data$OCE$A2G, sig_y = 0.0195, line_y = 0.021, text_y = 0.022, y_min = 0, y_max = 0.023,
+    submit_type = "transition", ytitle = "A2G", xlabel = FALSE
+)
+G2A <- plot_mutation_density(
+    data_for_plot = data$OCE$G2A,
+    sig_y = 0.0238, line_y = 0.0245, text_y = 0.011, y_min = 0.005, y_max = 0.025,
+    submit_type = FALSE, ytitle = "G2A", xlabel = FALSE
+)
+T2C <- plot_mutation_density(
+    data_for_plot = data$OCE$T2C,
+    sig_y = 0.0315, line_y = 0.034, text_y = 0.0175, y_min = 0, y_max = 0.035,
+    submit_type = FALSE, ytitle = "T2C", xlabel = FALSE
+)
+C2T <- plot_mutation_density(
+    data_for_plot = data$OCE$C2T,
+    sig_y = 0.0548, line_y = 0.06, text_y = 0.011, y_min = 0.002, y_max = 0.061,
+    submit_type = FALSE, ytitle = "C2T", xlabel = TRUE
+)
+# TODO:
+A2C <- plot_mutation_density(
+    data_for_plot = data$OCE$A2C,
+    sig_y = 0.0058, line_y = 0.0062, text_y = 0.0067, y_min = 0, y_max = 0.007,
+    submit_type = "transversion", ytitle = "A2C", xlabel = FALSE
+)
+A2T <- plot_mutation_density(
+    data_for_plot = data$OCE$A2T,
+    sig_y = 0.0086, line_y = 0.0091, text_y = 0.011, y_min = 0, y_max = 0.0095,
+    submit_type = FALSE, ytitle = "A2T", xlabel = FALSE
+)
+G2C <- plot_mutation_density(
+    data_for_plot = data$OCE$G2C,
+    sig_y = 0.013, line_y = 0.014, text_y = 0.0175, y_min = 0, y_max = 0.014,
+    submit_type = FALSE, ytitle = "G2C", xlabel = FALSE
+)
+G2T <- plot_mutation_density(
+    data_for_plot = data$OCE$G2T,
+    sig_y = 0.016, line_y = 0.0172, text_y = 0.011, y_min = 0, y_max = 0.0175,
+    submit_type = FALSE, ytitle = "G2T", xlabel = TRUE
+)
+
+C2A <- plot_mutation_density(
+    data_for_plot = data$OCE$C2A,
+    sig_y = 0.0275, line_y = 0.0293, text_y = 0.0307, y_min = 0, y_max = 0.031,
+    submit_type = "transversion", ytitle = "C2A", xlabel = FALSE
+)
+C2G <- plot_mutation_density(
+    data_for_plot = data$OCE$C2G,
+    sig_y = 0.0174, line_y = 0.0183, text_y = 0.011, y_min = 0, y_max = 0.0185,
+    submit_type = FALSE, ytitle = "C2G", xlabel = FALSE
+)
+T2A <- plot_mutation_density(
+    data_for_plot = data$OCE$T2A,
+    sig_y = 0.026, line_y = 0.028, text_y = 0.042, y_min = 0, y_max = 0.03,
+    submit_type = FALSE, ytitle = "T2A", xlabel = FALSE
+)
+T2G <- plot_mutation_density(
+    data_for_plot = data$OCE$T2G,
+    sig_y = 0.014, line_y = 0.0151, text_y = 0.0078, y_min = 0, y_max = 0.0153,
+    submit_type = FALSE, ytitle = "T2G", xlabel = TRUE
+)
+
+
+(A2G / G2A / T2C / C2T) | (A2C / A2T / G2C / G2T) | (C2A / C2G / T2A / T2G) +
+    plot_annotation(tag_levels = "A") &
+    theme(plot.tag = element_text(size = 32))
+ggsave(paste0(path, "/", "OCE.different_motifs.pdf"), width = 26, height = 34)
+ggsave(paste0(path, "/", "OCE.different_motifs.jpg"), width = 26, height = 34)

@@ -12,8 +12,8 @@ chrom=chrom_template
 popu_symbol=popu_symbol_template
 export pf6_variant_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/pf6"
 export popu_output_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/${popu_symbol}"
-export popu_variant_dir=$popu_output_dir/variant_two_group
-export popu_samplelist=$popu_output_dir/${popu_symbol}.two_outgroup.sample.list
+export popu_variant_dir=$popu_output_dir/variant_3D7
+export popu_samplelist=$popu_output_dir/${popu_symbol}.sample.list
 
 # VARIABLE NAMING for test module TODO:
 

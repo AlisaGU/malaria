@@ -1,0 +1,115 @@
+#!/home/gushanshan/anaconda3/envs/vscode_r/bin/Rscript
+# 1. packages and external scripts ---------------------------------------- TODO:
+library(ggplot2)
+library(ggsignif)
+library(dplyr)
+library(ggpubr)
+library(grid)
+library(patchwork)
+library(ggrepel)
+library(RColorBrewer)
+library(data.table)
+# 2. functions ------------------------------------------------------------ TODO:
+get_data_for_plot <- function(dataname = NULL) {
+    data <- fread(dataname, stringsAsFactors = F, sep = " ", select = 1:11)
+    colnames(data) <- c("nopeak", paste("w", 1:10, sep = ""))
+    rownames(data) <- paste("chrom", 1:14, sep = "")
+
+    data_for_plot <- data.frame(
+        value = unlist(data),
+        chrom = rep(rownames(data), times = ncol(data)),
+        source = rep(colnames(data), each = nrow(data))
+    )
+    a <- gsub("chrom", "", data_for_plot$chrom)
+    a[a != "1"] <- ""
+    data_for_plot$label <- a
+    return(data_for_plot)
+}
+
+plot_mutation_density <- function(data_for_plot = NULL, y_min = NULL, y_max = NULL, ylabel = NULL, label = NULL) {
+    p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add.params = list(size = 3)) +
+        # stat_compare_means(aes(group = source),
+        #     ref.group = "nopeak",
+        #     label = "p.signif", paired = T, label.y = sig_y, size = 10
+        # ) +
+        scale_color_manual(values = color_value) +
+        geom_smooth(data = subset(data_for_plot, source != "nopeak"), method = "loess", se = FALSE, aes(group = 1)) +
+        scale_x_discrete(labels = c("control", rep("", 4), "w5", rep("", 4), "w10")) +
+        scale_y_continuous(expand = c(0, 0)) +
+        coord_cartesian(ylim = c(y_min, y_max)) +
+        labs(y = ylabel) +
+        theme_bw() +
+        theme(
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_text(size = 24, color = "black"),
+            axis.text.y = element_text(size = 24, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 24, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 28, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm")
+        )
+    if (label == F) {
+        return(p)
+    } else if (label == T) {
+        p1 <- p + geom_text_repel(aes(label = label), data_for_plot,
+            size = 4, box.padding = 0.5, point.padding = 0.08,
+            min.segment.length = 0.05, segment.color = "black", show.legend = F, max.overlaps = 20
+        )
+        return(p1)
+    }
+    return(p)
+}
+
+
+# 3. input ---------------------------------------------------------------- TODO:
+Args <- commandArgs()
+path <- Args[6]
+popu_symbol <- Args[7]
+# 4. variable setting of test module--------------------------------------- TODO:
+# path<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/WSEA/sliding_window_noCollapseWindow/relative0.05/mutation_density"
+# popu_symbol<-"WSEA"
+# 5. process -------------------------------------------------------------- TODO:
+setwd(path)
+
+
+cols <- brewer.pal(3, "YlOrRd")
+pal <- colorRampPalette(cols)
+mycolors <- rev(pal(10))
+color_value <- c("#868686", mycolors)
+names(color_value) <- c("control", paste("w", 1:10, sep = ""))
+data_for_plot_all <- get_data_for_plot(dataname = "allvar_mean_variant_count")
+data_for_plot_snp <- get_data_for_plot(dataname = "snps_mean_variant_count")
+data_for_plot_indel <- get_data_for_plot(dataname = "indels_mean_variant_count")
+
+
+# relative 0.05
+all_p <- plot_mutation_density(data_for_plot = data_for_plot_all, y_min = 0.03, y_max = 0.14, ylabel = "All variants", label = F)
+snp_p <- plot_mutation_density(data_for_plot = data_for_plot_snp, y_min = 0.005, y_max = 0.03, ylabel = "Snps", label = F)
+indel_p <- plot_mutation_density(data_for_plot = data_for_plot_indel, y_min = 0.02, y_max = 0.12, ylabel = "Indels", label = F)
+
+
+patch <- all_p / snp_p / indel_p
+patch +
+    plot_annotation(tag_levels = "A") &
+    theme(plot.tag = element_text(size = 32))
+ggsave("all_snp_indel_sliding_window_nocollapse_mutation_density.pdf", width = 10, height = 21)
+ggsave("all_snp_indel_sliding_window_nocollapse_mutation_density.jpg", width = 10, height = 21)
+
+
+all_p <- plot_mutation_density(data_for_plot = data_for_plot_all, y_min = 0.03, y_max = 0.14, ylabel = "All variants", label = T)
+snp_p <- plot_mutation_density(data_for_plot = data_for_plot_snp, y_min = 0.005, y_max = 0.03, ylabel = "Snps", label = T)
+indel_p <- plot_mutation_density(data_for_plot = data_for_plot_indel, y_min = 0.02, y_max = 0.12, ylabel = "Indels", label = T)
+
+
+patch <- all_p / snp_p / indel_p
+patch +
+    plot_annotation(tag_levels = "A") &
+    theme(plot.tag = element_text(size = 32))
+ggsave("all_snp_indel_sliding_window_nocollapse_mutation_density_chr1.pdf", width = 10, height = 21)
+ggsave("all_snp_indel_sliding_window_nocollapse_mutation_density_chr1.jpg", width = 10, height = 21)

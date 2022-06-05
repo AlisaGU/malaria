@@ -76,8 +76,8 @@ Args <- commandArgs()
 path <- Args[6]
 popu_symbol <- Args[7]
 # 4. variable setting of test module--------------------------------------- TODO:
-
-
+# path<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation_jiang/WSEA/mutation_density_3D7_whole_chromosome"
+# popu_symbol<-"WSEA"
 # 5. process -------------------------------------------------------------- TODO:
 setwd(path)
 color_value <- c(
