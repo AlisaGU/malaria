@@ -284,7 +284,7 @@ output_dir <- Args[7]
 
 # 4. variable setting of test module---------------------------------------
 
-# motif_bed_file<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent/motif_loc/Pf3D7_01_v3.motif.bed"
+# motif_bed_file<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent/motif_pattern_2/motif_loc/Pf3D7_01_v3.motif.bed"
 # output_dir<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent/region_loc"
 # 5. process --------------------------------------------------------------
 chrom <- gsub(".motif.bed", "", basename(motif_bed_file))

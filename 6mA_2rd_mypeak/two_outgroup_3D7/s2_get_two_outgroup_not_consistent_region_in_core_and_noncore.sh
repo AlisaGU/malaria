@@ -14,7 +14,7 @@ export bcftools="/picb/evolgen/users/gushanshan/GenomeAnnotation/bcftools/bcftoo
 distant_african_strain="PF0870-C" # 非洲株里距离3D7最远的菌株
 reference_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/ref_genome/pf_3D7"
 anno_dir=${reference_dir}/anno
-two_outgroup_working_dir=$anno_dir/3D7_distant_africa_strain_consistent_region_in_core
+two_outgroup_working_dir=$anno_dir/3D7_distant_africa_strain_consistent_region_in_core_and_noncore
 
 # VARIABLE NAMING for test module TODO:
 
@@ -22,4 +22,4 @@ two_outgroup_working_dir=$anno_dir/3D7_distant_africa_strain_consistent_region_i
 set -x
 cd $two_outgroup_working_dir
 variant_file=$pf6_variant_dir/"Pf_60_public_Pf3D7_${chrom}_v3.final.vcf.gz"
-$bcftools view --include 'FILTER="PASS"' -s $distant_african_strain $variant_file | grep -v "^#" | awk 'BEGIN{OFS="\t"}{for(i=1;i<=2;i++){printf("%s%s",$i,OFS)}for(i=10;i<=10;i++){split($i,a,":");split(a[1],b,/[|/]/);printf("%s",b[2])};printf(ORS)}' | awk '$3!=0{print $1"\t"$2-1"\t"$2}' >${chrom}.inconsistent_region_in_core.bed
+$bcftools view --include 'VQSLOD>0.0' -s $distant_african_strain $variant_file | grep -v "^#" | awk 'BEGIN{OFS="\t"}{for(i=1;i<=2;i++){printf("%s%s",$i,OFS)}for(i=10;i<=10;i++){split($i,a,":");split(a[1],b,/[|/]/);printf("%s",b[2])};printf(ORS)}' | awk '$3!=0{print $1"\t"$2-1"\t"$2}' >${chrom}.inconsistent_region_in_core_and_noncore.bed

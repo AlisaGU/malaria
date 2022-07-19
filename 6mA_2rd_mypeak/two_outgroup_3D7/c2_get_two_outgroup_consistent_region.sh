@@ -9,18 +9,32 @@
 get_two_outgroup_not_consistent_region_in_core() {
     # $code_dir/s2_1_get_two_outgroup_strain_inconsistent_region_in_core.R $inconsistent_region_in_core # 放弃
 
-    # for chrom in $(echo $chroms | tr " " "\n"); do
-    #     sed "s/chrom_template/$chrom/g" $code_dir/s2_get_two_outgroup_not_consistent_region_in_core.sh >$code_dir/s2_get_two_outgroup_not_consistent_region_in_core.sh_${chrom}
-    #     sbatch $code_dir/s2_get_two_outgroup_not_consistent_region_in_core.sh_${chrom}
-    # done
+    for chrom in $(echo $chroms | tr " " "\n"); do
+        sed "s/chrom_template/$chrom/g" $code_dir/s2_get_two_outgroup_not_consistent_region_in_core.sh >$code_dir/s2_get_two_outgroup_not_consistent_region_in_core.sh_${chrom}
+        sbatch $code_dir/s2_get_two_outgroup_not_consistent_region_in_core.sh_${chrom}
+    done
 
-    cat $two_outgroup_working_dir/*.inconsistent_region_in_core.bed | sort -k1,1 -k2,2n >$inconsistent_region_in_core
-    rm -rf *.inconsistent_region_in_core.bed
+    # cat $two_outgroup_working_dir/*.inconsistent_region_in_core.bed | sort -k1,1 -k2,2n >$inconsistent_region_in_core
+    # rm -rf *.inconsistent_region_in_core.bed
+}
+
+get_two_outgroup_not_consistent_region_in_core_and_noncore() {
+    for chrom in $(echo $chroms | tr " " "\n"); do
+        sed "s/chrom_template/$chrom/g" $code_dir/s2_get_two_outgroup_not_consistent_region_in_core_and_noncore.sh >$code_dir/s2_get_two_outgroup_not_consistent_region_in_core_and_noncore.sh_${chrom}
+        sbatch $code_dir/s2_get_two_outgroup_not_consistent_region_in_core_and_noncore.sh_${chrom}
+    done
+
+    # cat $two_outgroup_working_dir/*.inconsistent_region_in_core_and_noncore.bed | sort -k1,1 -k2,2n >$inconsistent_region_in_core_and_noncore
+    # rm -rf *.inconsistent_region_in_core_and_noncore.bed
 }
 
 get_two_outgroup_consistent_region_in_core() {
     $bedtools complement -i $inconsistent_region_in_core -g $genome_size >$complementary_to_inconsistent_region_in_core
     $bedtools intersect -a $complementary_to_inconsistent_region_in_core -b $core_bed >$consistent_region_in_core
+}
+
+get_two_outgroup_consistent_region_in_core_and_noncore() {
+    $bedtools complement -i $inconsistent_region_in_core_and_noncore -g $genome_size >$consistent_region_in_core_and_noncore
 }
 
 get_peak_nopeak_in_core_consistent_region() {
@@ -82,9 +96,13 @@ select_nopeak_region_away_from_peak() {
 code_dir="/picb/evolgen2/users/gushanshan/projects/malaria/code/6mA_2rd_mypeak/two_outgroup_3D7"
 reference_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/ref_genome/pf_3D7"
 anno_dir=${reference_dir}/anno
-two_outgroup_working_dir=$anno_dir/3D7_distant_africa_strain_consistent_region_in_core
+# two_outgroup_working_dir=$anno_dir/3D7_distant_africa_strain_consistent_region_in_core
+two_outgroup_working_dir=$anno_dir/3D7_distant_africa_strain_consistent_region_in_core_and_noncore
+
 macs2_out_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output"
-macs2_two_outgroup_consistent_dir=$macs2_out_dir/two_outgroup_consistent
+# macs2_two_outgroup_consistent_dir=$macs2_out_dir/two_outgroup_consistent
+macs2_two_outgroup_consistent_dir=$macs2_out_dir/two_outgroup_consistent_in_core_noncore
+
 core_peak_seq_dir=$macs2_two_outgroup_consistent_dir/peak_seq
 motif_bed_dir=$macs2_two_outgroup_consistent_dir/motif_loc
 region_bed_dir=$macs2_two_outgroup_consistent_dir/region_loc
@@ -95,8 +113,12 @@ peak_bed=$macs2_out_dir/"peak.bed"
 nopeak_bed=$macs2_out_dir/"nopeak.bed"
 core_bed=$reference_dir/anno/3D7.core.bed
 inconsistent_region_in_core=$two_outgroup_working_dir/inconsistent_region_in_core.bed
+inconsistent_region_in_core_and_noncore=$two_outgroup_working_dir/inconsistent_region_in_core_and_noncore.bed
+
 complementary_to_inconsistent_region_in_core=$two_outgroup_working_dir/complementary_to_inconsistent_region_in_core.bed
 consistent_region_in_core=$two_outgroup_working_dir/consistent_region_in_core.bed
+consistent_region_in_core_and_noncore=$two_outgroup_working_dir/consistent_region_in_core_and_noncore.bed
+
 core_consistent_peak=$macs2_two_outgroup_consistent_dir/core_consistent_peak.bed
 core_consistent_nopeak=$macs2_two_outgroup_consistent_dir/core_consistent_nopeak.bed
 motif_pattern="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/2_2rd_partition_jiang/intergenic_motif/motif_pattern"
@@ -110,11 +132,15 @@ seqkit="/picb/evolgen/users/gushanshan/GenomeAnnotation/seqkit/seqkit"
 
 # PROCESS TODO:
 # set -x
-# mkdir -p $two_outgroup_working_dir $macs2_two_outgroup_consistent_dir
+mkdir -p $two_outgroup_working_dir $macs2_two_outgroup_consistent_dir
 # get_two_outgroup_not_consistent_region_in_core
+# get_two_outgroup_not_consistent_region_in_core_and_noncore
+
 # get_two_outgroup_consistent_region_in_core
+
+get_two_outgroup_consistent_region_in_core_and_noncore
 # get_peak_nopeak_in_core_consistent_region
 # extract_peak_seq_in_core_consistent_region
-locate_motif
-get_block_bed_for_motif
-select_nopeak_region_away_from_peak
+# locate_motif
+# get_block_bed_for_motif
+# select_nopeak_region_away_from_peak

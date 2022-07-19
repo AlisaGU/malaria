@@ -51,6 +51,44 @@ get_data_for_plot <- function(popu_symbol = NULL, dataname = NULL, path = NULL) 
     return(result)
 }
 
+get_data_for_plot_facet <- function(popu_symbol = NULL, dataname = NULL, path = NULL) {
+    data_nopeak <- fread(paste0("central_motif_relative.0.1_mutation_density_base_count/", dataname, "_mean_variant_count"),
+        select = 1, stringsAsFactors = F
+    )
+    data_CM1 <- fread(paste0("central_motif_relative.0.1_mutation_density_base_count/", dataname, "_mean_variant_count"),
+        select = 2, stringsAsFactors = F
+    )
+    data_CM2 <- fread(paste0("central_motif_relative.0.2_mutation_density_base_count/", dataname, "_mean_variant_count"),
+        select = 2, stringsAsFactors = F
+    )
+    data_all_motifs <- fread(paste0("mutation_dentisy_two_outgroup_consistent/", dataname, "_mean_variant_count"),
+        select = 2, stringsAsFactors = F
+    )
+
+    result <- data.frame(
+        value = c(
+            unlist(data_nopeak), unlist(data_CM1),
+            unlist(data_CM2), unlist(data_all_motifs)
+        ), chrom = rep(paste("chrom", 1:14, sep = ""), times = 4),
+        source = rep(c("nopeak", "CM1", "CM2", "all_motifs"), each = 14)
+    )
+
+    a <- gsub("chrom", "", result$chrom)
+    a[a != "1"] <- ""
+    result$label <- a
+    result$variant <- dataname
+
+    result$variant <- gsub("snps", "SNPs", gsub("indels", "Indels", gsub("allvar", "All variants", gsub("_single_del", " to sDel", gsub("2", " to ", result$variant)))))
+    result$variant_f <- factor(result$variant, levels = c(
+        "All variants", "SNPs", "Indels",
+        "A to G", "A to T", "A to C", "A to sDel",
+        "G to A", "G to T", "G to C", "G to sDel",
+        "C to T", "C to A", "C to G", "C to sDel",
+        "T to C", "T to A", "T to G", "T to sDel"
+    ))
+    return(result)
+}
+
 plot_mutation_density <- function(data_for_plot = NULL, sig_y = NULL, line_y = NULL, text_y = NULL, y_min = NULL, y_max = NULL, submit_type = NULL, ytitle = NULL, xlabel = NULL) {
     p <- ggboxplot(data = data_for_plot, x = "source", y = "value", color = "source", add = "point", add.params = list(size = 3)) +
         stat_compare_means(aes(group = source),
@@ -95,9 +133,46 @@ plot_mutation_density <- function(data_for_plot = NULL, sig_y = NULL, line_y = N
     return(p)
 }
 
+plot_mutation_density_facet <- function(data_for_plot = NULL) {
+    data_for_plot$source <- factor(data_for_plot$source, levels = c("nopeak", "CM1", "CM2", "all_motifs"))
+    p <- ggplot(data_for_plot, aes(x = source, y = value, color = source)) +
+        geom_boxplot(position = position_dodge(), outlier.shape = NA) +
+        geom_point(size = 4) +
+        stat_compare_means(
+            ref.group = "CM1",
+            hide.ns = T, vjust = 0.5, show.legend = FALSE,
+            label = "p.signif", paired = T, size = 15
+        ) +
+        facet_wrap(~variant_f, nrow = 1, ncol = 3, scale = "free") +
+        scale_color_manual(values = color_value) +
+        scale_x_discrete(labels = c("control", "10%", "20%", "all motifs")) +
+        labs(y = "Mutation density") +
+        theme_bw() +
+        theme(
+            strip.background = element_rect(fill = rgb(0, 72, 144, maxColorValue = 255)),
+            strip.text.x = element_text(size = 30, color = "white"),
+            panel.border = element_blank(),
+            # panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_text(size = 30, color = "black"),
+            axis.text.y = element_text(size = 30, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 40, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 36, color = "black"),
+            legend.title = element_blank(),
+            legend.text = element_text(size = 24, color = "black"),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm"),
+            panel.spacing = unit(3, "lines")
+        )
+    return(p)
+}
 # 3. input ----------------------------------------------------------------
 popu_symbol <- "WSEA"
-path <- paste0("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/", popu_symbol, "/motif")
+path <- paste0("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/", popu_symbol, "/motif_2")
 # 4. variable setting of test module---------------------------------------
 
 
@@ -110,12 +185,18 @@ color_value <- c(
     "all_motifs" = "#fed98e"
 )
 data <- list()
+variant_types <- c("allvar", "snps", "indels")
+for (variant_type in variant_types) {
+    data[[variant_type]] <- get_data_for_plot_facet(popu = popu_symbol, dataname = variant_type, path = path)
+}
+data <- do.call(rbind, data)
+plot_mutation_density_facet(data_for_plot = data)
+ggsave(paste0(path, "/", "WSEA.different_motifs_global_facet.pdf"), width = 24, height = 8)
+
 # variant_types<-c("A2G", "G2A", "T2C", "C2T", "A2C", "A2T", "G2C", "G2T", "C2A", "C2G", "T2A", "T2G")
-variant_types <- c("snps")
 for (variant_type in variant_types) {
     data[[popu_symbol]][[variant_type]] <- get_data_for_plot(popu = popu_symbol, dataname = variant_type, path = path)
 }
-
 snps <- plot_mutation_density(
     data_for_plot = data$WSEA$snps, sig_y = 0.195, line_y = 0.2, text_y = 0.21, y_min = 0.02, y_max = 0.24,
     submit_type = FALSE, ytitle = "SNPs", xlabel = TRUE

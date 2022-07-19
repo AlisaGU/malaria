@@ -46,6 +46,23 @@ get_data_for_plot_3_control_N2N <- function(dataname = NULL) {
     return(data_for_plot)
 }
 
+get_data_for_plot_3_control_N2N_threshold <- function(dataname = NULL) {
+    data <- fread(dataname, stringsAsFactors = F, sep = " ", select = c(2, 4))
+    data <- data[, 2] / data[, 1]
+    colnames(data) <- c("peak/control")
+
+    rownames(data) <- paste("chrom", 1:14, sep = "")
+
+    data_for_plot <- data.frame(
+        value = unlist(data),
+        chrom = rep(rownames(data), times = ncol(data)),
+        source = rep(colnames(data), each = nrow(data))
+    )
+    a <- gsub("chrom", "", data_for_plot$chrom)
+    a[a != "1"] <- ""
+    data_for_plot$label <- a
+    return(data_for_plot)
+}
 
 plot_global <- function(data_for_all_direc = NULL, y_pos = NULL, nrow = NULL, ncol = NULL, label = NULL) {
     anno_data_for_all_direc <- compare_means(value ~ source, group.by = "variant", data = data_for_all_direc) %>% mutate(y_pos = y_pos)
@@ -101,6 +118,7 @@ plot_N2N <- function(data_for_all_direc = NULL, label = NULL) {
             label = "p.signif", paired = T, size = 16
         ) +
         facet_wrap(~oribase_f, nrow = 2, ncol = 2, scale = "free_x") +
+        labs(y = "Mutation density") +
         theme_bw() +
         theme(
             strip.background = element_rect(fill = rgb(0, 72, 144, maxColorValue = 255)),
@@ -116,7 +134,38 @@ plot_N2N <- function(data_for_all_direc = NULL, label = NULL) {
                 size = 24, vjust = 0.5, hjust = 0.5
             ),
             axis.title.x = element_blank(),
-            axis.title.y = element_blank(),
+            axis.title.y = element_text(size = 36, color = "black"),
+            legend.title = element_blank(),
+            legend.text = element_text(size = 24, color = "black"),
+            legend.position = "bottom",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm"),
+            panel.spacing = unit(3, "lines")
+        )
+    return(p)
+}
+
+plot_N2N_threshold <- function(data_for_all_direc = NULL, label = NULL) {
+    p <- ggplot(data_for_all_direc, aes(x = variant_f, y = value)) +
+        geom_boxplot(outlier.shape = NA) +
+        geom_point(size = 4) +
+        facet_wrap(~oribase_f, nrow = 2, ncol = 2, scale = "free_x") +
+        labs(y = "Peak/Control") +
+        theme_bw() +
+        theme(
+            strip.background = element_rect(fill = rgb(0, 72, 144, maxColorValue = 255)),
+            strip.text.x = element_text(size = 30, color = "white"),
+            panel.border = element_blank(),
+            # panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            # axis.text.x = element_text(size = 30, color = "black", angle = 45, hjust = 0.7, vjust = 0.7),
+            axis.text.x = element_text(size = 30, color = "black"),
+            axis.text.y = element_text(size = 30, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 24, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 36, color = "black"),
             legend.title = element_blank(),
             legend.text = element_text(size = 24, color = "black"),
             legend.position = "bottom",
@@ -129,7 +178,7 @@ plot_N2N <- function(data_for_all_direc = NULL, label = NULL) {
 Args <- commandArgs()
 path <- Args[6]
 # 4. variable setting of test module--------------------------------------- TODO:
-# path<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/SAS/motif/mutation_dentisy_two_outgroup_consistent"
+# path<-"/picb/evolgen2/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation_jiang/WSEA/motif_2/mutation_dentisy_two_outgroup_consistent"
 # 5. process -------------------------------------------------------------- TODO:
 setwd(path)
 
@@ -211,15 +260,46 @@ color_value_N2N <- c(
     # ggsave("N2N_3control.pdf", width = 32, height = 30)
     # ggsave("N2N_3control.jpg", width = 32, height = 30)
     ggsave("N2N_3control_single_del_2_2.pdf", width = 16, height = 16)
-    ggsave("N2N_3control_single_del_2_2.jpg", width = 16, height = 16)
+    # ggsave("N2N_3control_single_del_2_2.jpg", width = 16, height = 16)
     plot_N2N(data_for_all_direc = data_for_all_direc, label = TRUE)
     # ggsave("N2N_3control_chr1.pdf", width = 32, height = 30)
     # ggsave("N2N_3control_chr1.jpg", width = 32, height = 30)
     ggsave("N2N_3control_single_del_2_2_chr1.pdf", width = 16, height = 16)
-    ggsave("N2N_3control_single_del_2_2_chr1.jpg", width = 16, height = 16)
+    # ggsave("N2N_3control_single_del_2_2_chr1.jpg", width = 16, height = 16)
 }
 
+{{ variants_type <- c(
+    "A2G", "A2T", "A2C", "A_single_del",
+    "G2A", "G2T", "G2C", "G_single_del",
+    "C2T", "C2A", "C2G", "C_single_del",
+    "T2C", "T2A", "T2G", "T_single_del"
+)
+variant_oribase <- substr(variants_type, 1, 1)
+# variants_type_title <- sub("2|_", " to ", variants_type, perl = T)
+variants_type_title <- c(
+    "A to G", "A to T", "A to C", "A to sDel",
+    "G to A", "G to T", "G to C", "G to sDel",
+    "C to T", "C to A", "C to G", "C to sDel",
+    "T to C", "T to A", "T to G", "T to sDel"
+)
+data_for_plot <- lapply(variants_type, function(x) {
+    # get_data_for_plot_3_control(paste0(x, "_mean_variant_count_3control"))
+    get_data_for_plot_3_control_N2N_threshold(paste0(x, "_mean_variant_count_3control"))
+})
+names(data_for_plot) <- variants_type
 
+
+data_for_all_direc <- do.call(rbind, data_for_plot)
+data_for_all_direc$variant <- rep(variants_type_title, each = nrow(data_for_plot[[1]]))
+data_for_all_direc$variant_f <- factor(data_for_all_direc$variant, levels = variants_type_title)
+data_for_all_direc$oribase <- rep(variant_oribase, each = nrow(data_for_plot[[1]]))
+data_for_all_direc$oribase_f <- factor(data_for_all_direc$oribase, levels = unique(variant_oribase))
+
+# data_for_all_direc$source <- factor(data_for_all_direc$source, levels = c("nopeak", "nopeak_motif", "nopeak500_motif", "motif", paste("region", c(1, 2, 3, 4), sep = "")))
+# data_for_all_direc$source <- factor(data_for_all_direc$source, levels = c("nopeak_motif", "motif"))
+
+plot_N2N_threshold(data_for_all_direc = data_for_all_direc, label = FALSE)
+ggsave("N2N_3control_single_del_2_2_threshold.pdf", width = 16, height = 16) }}
 
 
 {

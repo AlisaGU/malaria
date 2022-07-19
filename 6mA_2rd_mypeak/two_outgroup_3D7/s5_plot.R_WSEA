@@ -106,7 +106,7 @@ plot_mutation_density_sliding_window <- function(data_for_plot = NULL, sig_y = N
         ) +
         scale_color_manual(values = color_value_sliding_window) +
         # geom_smooth(data = subset(data_for_plot, source != "nopeak"), method = "loess", se = FALSE, aes(group = 1)) +
-        scale_x_discrete(labels = c("control", "control(500)", "5%", "10%", "15%", "20%", "25%", "30%", "35%", "40%", "45%", "50%")) +
+        scale_x_discrete(labels = c("Control", "Control(500)", "Submit~5%", "5~10%", "10~15%", "15~20%", "20~25%", "25~30%", "30~35%", "35~40%", "40~45%", "45~50%")) +
         scale_y_continuous(expand = c(0, 0)) +
         coord_cartesian(ylim = c(y_min, y_max)) +
         labs(y = "Motif average count") +
@@ -169,5 +169,4 @@ data <- get_data_for_plot_sliding_window(dataname = "motif_count2_sliding_window
 # plot_motif_count(data_for_plot = data, y_min = 0, y_max = 0.0038, label = TRUE)
 # motif_2
 plot_mutation_density_sliding_window(data_for_plot = data, sig_y = 0.048, y_min = 0, y_max = 0.051, label = TRUE)
-ggsave("motif_count_nopeak_central_sliding_window.pdf", height = 7, width = 7)
-ggsave("motif_count_nopeak_central_sliding_window.jpg", height = 7, width = 10)
+ggsave("motif_count_nopeak_central_sliding_window.pdf", height = 7, width = 10)
