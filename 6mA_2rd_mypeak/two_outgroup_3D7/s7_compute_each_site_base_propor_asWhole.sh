@@ -40,8 +40,13 @@ compute_each_site_base_propor() {
 motif=motif_template
 macs2_out_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output"
 macs2_two_outgroup_consistent_dir=$macs2_out_dir/two_outgroup_consistent
-# motif_each_dir=${macs2_two_outgroup_consistent_dir}/single_motif_pattern/all_motifs/${motif}
-motif_each_dir=${macs2_two_outgroup_consistent_dir}/single_motif_pattern/${motif}
+
+motif_each_dir=""
+if [ "$motif_seq" = "GAWGAW" ]; then
+    motif_each_dir=${macs2_two_outgroup_consistent_dir}/single_motif_pattern/${motif}
+else
+    motif_each_dir=${macs2_two_outgroup_consistent_dir}/single_motif_pattern/all_motifs/${motif}
+fi
 
 genome="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/ref_genome/pf_3D7/genome/PlasmoDB-36_Pfalciparum3D7_Genome.fasta"
 autosomes="Pf3D7_01_v3 Pf3D7_02_v3 Pf3D7_03_v3 Pf3D7_04_v3 Pf3D7_05_v3 Pf3D7_06_v3 Pf3D7_07_v3 Pf3D7_08_v3 Pf3D7_09_v3 Pf3D7_10_v3 Pf3D7_11_v3 Pf3D7_12_v3 Pf3D7_13_v3 Pf3D7_14_v3"

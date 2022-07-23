@@ -463,7 +463,7 @@ get_scale_factor_by_propor <- function(propor_data = NULL, scale_data = NULL) {
 }
 
 
-read_each_site_flank_scale_by_propor <- function(flank = NULL, scale_factor = NULL) {
+read_each_site_flank_scale_by_propor <- function(flank = NULL, scale_data = scale_data, propor_data = propor_data) {
     setwd(flank)
     file_names <- dir()[grep("snps|indels", dir())]
 
@@ -557,7 +557,7 @@ titles <- c(
 )
 names(titles) <- c(
     "GAMSAA", "GAHGAW", "GAACAA",
-    "GAAGAA", "GATGAA", "GATGAT", "GAWGAW"
+    "GAAGAA", "GATGAA", "GATGAT","GAWGAW"
 )
 
 setwd(global_dir)

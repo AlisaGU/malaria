@@ -139,19 +139,19 @@ bedtools=/picb/evolgen/users/gushanshan/software/bedtools/bedtools
 # PROCESS TODO:
 set -e
 
-# 1. 计算简并式motif在基因组的位置 # TODO: CHECK DONE
+# 1. 计算简并式motif在基因组的位置
 sed "s/motif_seq_template/all_motifs/g" $code_dir/s7_each_site_genome_index_for_motifs_asWhole.sh >$code_dir/s7_each_site_genome_index_for_motifs_asWhole.sh_all_motifs
 sbatch $code_dir/s7_each_site_genome_index_for_motifs_asWhole.sh_all_motifs
 
-# 2. 合并所有motif，寻找flank区间 # TODO: CHECK DONE
+# 2. 合并所有motif，寻找flank区间
 cd $single_motif_global_output_dir/all_motifs
 find_flank_region
 
-# 3.在所有motif水平上寻找nonoverlap的motif，先定两头 # TODO: CHECK DONE
+# 3.在所有motif水平上寻找nonoverlap的motif，先定两头
 cd $single_motif_global_output_dir/all_motifs
 find_nonoverlap_motif
 
-# 4. 为每种motif定义1，2，3，4，5，6号位 # TODO: CHECK DONE
+# 4. 为每种motif定义1，2，3，4，5，6号位
 cd $single_motif_global_output_dir/all_motifs/motif_bed
 find_specific_site
 
@@ -163,23 +163,23 @@ for motif in $(echo "GAMSAA GAHGAW GAAGAA GAACAA GACGAA GACCAA GAAGAT GATGAA GAT
     cd -
 done
 
-# 6. 计算motif位点的突变速率
+# 6. 计算motif位点的突变速率 # TODO: done
 for popu_symbol in $(echo "ESEA_WSEA_OCE_SAM_SAS" | tr " " "\n"); do
     for motif_seq in $(echo $motifs | tr " " "\n"); do
-        sed "s/popu_symbol_template/${popu_symbol}/g" $code_dir/s7_compute_mutation_load_for_each_site_of_motif_asWhole.sh | sed "s/motif_seq_template/${motif_seq}/g" >$code_dir/s7_compute_mutation_load_for_each_site_of_motif_asWhole.sh_${popu_symbol}_${motif_seq}
-        sbatch $code_dir/s7_compute_mutation_load_for_each_site_of_motif_asWhole.sh_${popu_symbol}_${motif_seq}
+        sed "s/popu_symbol_template/${popu_symbol}/g" $code_dir/s7_compute_mutation_load_for_each_site_of_motif_asWhole_LI_formula.sh | sed "s/motif_seq_template/${motif_seq}/g" >$code_dir/s7_compute_mutation_load_for_each_site_of_motif_asWhole_LI_formula.sh_${popu_symbol}_${motif_seq}
+        sbatch $code_dir/s7_compute_mutation_load_for_each_site_of_motif_asWhole_LI_formula.sh_${popu_symbol}_${motif_seq}
     done
 done
 
-# 7. 计算flank位点的突变速率
+# 7. 计算flank位点的突变速率 # TODO: NEED MODIFY
 for popu_symbol in $(echo "ESEA_WSEA_OCE_SAM_SAS" | tr " " "\n"); do
     for motif_seq in $(echo $motifs | tr " " "\n"); do
-        sed -e "s/motif_seq_template/$motif_seq/g" -e "s/popu_symbol_template/${popu_symbol}/g" $code_dir/s7_compute_mutation_load_for_each_site_of_flank_asWhole.sh >$code_dir/s7_compute_mutation_load_for_each_site_of_flank_asWhole.sh_${popu_symbol}_$motif_seq
-        sbatch $code_dir/s7_compute_mutation_load_for_each_site_of_flank_asWhole.sh_${popu_symbol}_$motif_seq
+        sed -e "s/motif_seq_template/$motif_seq/g" -e "s/popu_symbol_template/${popu_symbol}/g" $code_dir/s7_compute_mutation_load_for_each_site_of_flank_asWhole_LI_formula.sh >$code_dir/s7_compute_mutation_load_for_each_site_of_flank_asWhole_LI_formula.sh_${popu_symbol}_$motif_seq
+        sbatch $code_dir/s7_compute_mutation_load_for_each_site_of_flank_asWhole_LI_formula.sh_${popu_symbol}_$motif_seq
     done
 done
 
-# 8. 计算A、T、C、G四种碱基在信号区的基底速率
+# 8. 计算A、T、C、G四种碱基在信号区的基底速率 # TODO: RERUN
 for popu_symbol in $(echo "ESEA_WSEA_OCE_SAM_SAS" | tr " " "\n"); do
     sed "s/popu_symbol_template/${popu_symbol}/g" $code_dir/s7_compute_each_chrom_peak_base_mutation_density.sh >$code_dir/s7_compute_each_chrom_peak_base_mutation_density.sh_$popu_symbol
     sbatch $code_dir/s7_compute_each_chrom_peak_base_mutation_density.sh_$popu_symbol

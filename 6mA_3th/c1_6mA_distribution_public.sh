@@ -100,12 +100,18 @@ seqkit="/picb/evolgen/users/gushanshan/GenomeAnnotation/seqkit/seqkit"
 # PROCESS TODO:
 # set -ex
 cd $working_dir
-prefix=""
-m6mA_3th_bed="3D7-6mA-9Cell${prefix}.bed"
-validate_6mA_sliding_window_distribution_in_3th_data
-validate_6mA_motif_flank_pattern_in_3th_data
+# prefix=""
+# m6mA_3th_bed="3D7-6mA-9Cell${prefix}.bed"
+# validate_6mA_sliding_window_distribution_in_3th_data
+# validate_6mA_motif_flank_pattern_in_3th_data
 
-for prefix in $(echo "_COVgt25,_COVgt50,_FRACgt20_COVgt25,_QVgt20_COVgt10" | tr "," "\n"); do
+# for prefix in $(echo "_COVgt25,_COVgt50,_FRACgt20_COVgt25,_QVgt20_COVgt10" | tr "," "\n"); do
+#     m6mA_3th_bed="3D7-6mA-9Cell${prefix}.bed"
+#     validate_6mA_sliding_window_distribution_in_3th_data
+#     validate_6mA_motif_flank_pattern_in_3th_data
+# done
+
+for prefix in $(echo "_FRACgt20_COVgt25" | tr "," "\n"); do
     m6mA_3th_bed="3D7-6mA-9Cell${prefix}.bed"
     validate_6mA_sliding_window_distribution_in_3th_data
     validate_6mA_motif_flank_pattern_in_3th_data
