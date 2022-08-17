@@ -17,8 +17,10 @@ cd $code_dir
 
 # species3
 for chrom in $chroms; do
-    sed -e "s/chrom_template/${chrom}/g" $code_dir/s3_get_mutation_load_for_one_chrom_species3.sh >s3_get_mutation_load_for_one_chrom_species3.sh_${chrom}
-    sbatch s3_get_mutation_load_for_one_chrom_species3.sh_${chrom}
+    #     sed -e "s/chrom_template/${chrom}/g" $code_dir/s3_get_mutation_load_for_one_chrom_species3.sh >s3_get_mutation_load_for_one_chrom_species3.sh_${chrom}
+    #     sbatch s3_get_mutation_load_for_one_chrom_species3.sh_${chrom}
+    sed -e "s/chrom_template/${chrom}/g" $code_dir/s3_get_mutation_load_for_one_chrom_species3_include_indel.sh >s3_get_mutation_load_for_one_chrom_species3_include_indel.sh_${chrom}
+    sbatch s3_get_mutation_load_for_one_chrom_species3_include_indel.sh_${chrom}
 done
 
 # species2

@@ -166,7 +166,7 @@ plot_mutation_density <- function(data_for_plot = NULL) {
     p <- ggplot(data_for_plot, aes(x = source, y = value, color = source)) +
         geom_boxplot(position = position_dodge(), outlier.shape = NA) +
         geom_point(size = 4) +
-        facet_wrap(~variant_f, nrow = 1, ncol = 3,scale="free") +
+        facet_wrap(~variant_f, nrow = 1, ncol = 3, scale = "free") +
         # stat_pvalue_manual(data = stat.test, label = "p = {p.format}", size = 10, remove.bracket = T) +
         stat_compare_means(
             method = "t.test", tip.length = 0, bracket.size = 0,
@@ -427,15 +427,22 @@ data_for_plot <- lapply(variants_type, function(x) {
 names(data_for_plot) <- variants_type
 # relative 0.05
 {
-    data_for_plot_global <- data_for_plot[c("allvar", "snps", "indels")]
+    variants_type <- c("snps", "indels")
+    data_for_plot <- lapply(variants_type, function(x) {
+        # get_data_for_plot(paste0(x, "_mean_variant_count"))
+        get_data_for_plot_facet(paste0(x, "_mean_variant_count"))
+        # get_data_for_plot_facet(paste0(x, "_mean_variant_count_retry"))
+    })
+    names(data_for_plot) <- variants_type
+
+    data_for_plot_global <- data_for_plot[c("snps", "indels")]
     data_for_plot_global <- do.call(rbind, data_for_plot_global)
-    data_for_plot_global$variant <- gsub("snps", "SNPs", gsub("indels", "Indels", gsub("allvar", "All variants", gsub("_single_del", " to sDel", gsub("2", " to ", data_for_plot_global$variant)))))
+    data_for_plot_global$variant <- gsub("snps", "SNPs", gsub("indels", "Indels", data_for_plot_global$variant))
+    # data_for_plot_global$variant <- gsub("snps_retry", "SNPs_retry", gsub("indels_retry", "Indels_retry", data_for_plot_global$variant))
+
     data_for_plot_global$variant_f <- factor(data_for_plot_global$variant, levels = c(
-        "All variants", "SNPs", "Indels",
-        "A to G", "A to T", "A to C", "A to sDel",
-        "G to A", "G to T", "G to C", "G to sDel",
-        "C to T", "C to A", "C to G", "C to sDel",
-        "T to C", "T to A", "T to G", "T to sDel"
+        "SNPs", "Indels"
+        # "SNPs_retry", "Indels_retry"
     ))
     data_for_plot_global$source <- factor(data_for_plot_global$source, levels = c("nopeak", paste("w", 1:10, sep = "")))
     # all_p <- plot_mutation_density(data_for_plot = data_for_plot$allvar, sig_y = 0.16, y_min = 0.02, y_max = 0.17, ylabel = "All variants", label = F, xlabel = F)
@@ -448,8 +455,8 @@ names(data_for_plot) <- variants_type
     #     theme(plot.tag = element_text(size = 32))
     # ggsave("all_snp_indel_sliding_window_mutation_density.pdf", width = 10, height = 21)
     # ggsave("all_snp_indel_sliding_window_mutation_density.jpg", width = 10, height = 21)
-    plot_mutation_density(data_for_plot = data_for_plot)
-    ggsave("all_snp_indel_sliding_window_mutation_density_facet.pdf", width = 24, height = 8)
+    plot_mutation_density(data_for_plot = data_for_plot_global)
+    ggsave("all_snp_indel_sliding_window_mutation_density_facet.pdf", width = 18, height = 8)
 
     all_p <- plot_mutation_density(data_for_plot = data_for_plot$allvar, sig_y = 0.16, y_min = 0.02, y_max = 0.17, ylabel = "All variants", label = T, xlabel = F)
     snp_p <- plot_mutation_density(data_for_plot = data_for_plot$snps, sig_y = 0.034, y_min = 0.007, y_max = 0.036, ylabel = "SNPs", label = T, xlabel = F)

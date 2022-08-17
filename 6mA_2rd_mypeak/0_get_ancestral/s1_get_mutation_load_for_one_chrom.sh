@@ -1,11 +1,9 @@
 #!/bin/bash
 #SBATCH -n 4
-#SBATCH -A evolgen-grp
-#SBATCH -p evolgen
+#SBATCH -p hpc
 #SBATCH -o %x-%j.out
 #SBATCH --error=%x-%j.err
-#SBATCH --mem=35G
-
+#SBATCH --mem=100G
 # FUNCTIONS TODO:
 
 # VARIABLE NAMING TODO:
@@ -20,4 +18,9 @@ inputfile=$popu_variant_dir/"${popu_symbol}_PASS_${chrom}.vcf.gz"
 
 # PROCESS TODO:
 # set -x
-$code_dir/s1_2_get_mutation_load_for_each_site.R $inputfile
+# $code_dir/s1_2_get_mutation_load_for_each_site.R $inputfile #这个有问题，多次统计了spanning deletion
+# $code_dir/s1_2_get_mutation_load_for_each_site_before_remove_spanning_deletion.R $inputfile
+# $code_dir/s1_2_get_mutation_load_for_each_site_remove_spanning_deletion.R $inputfile
+# $code_dir/s1_2_get_mutation_load_for_each_site_remove_spanning_deletion_just_in_population.R $inputfile
+# $code_dir/s1_2_get_mutation_load_for_each_site_remove_spanning_deletion_remove_popu_monomorphism.R $inputfile
+$code_dir/s1_2_get_mutation_load_for_each_site_nomatter_ancestor.R $inputfile

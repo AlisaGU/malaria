@@ -8,10 +8,9 @@
 # FUNCTIONS TODO:
 subset_vcf() {
     mkdir -p $popu_variant_dir
-    # echo $chrom1 | tr " " "\n" | $parallel -j 2 subset_vcf_for_one_chrom
     for chrom in $(echo $chroms | tr " " "\n"); do
-        sed "s/chrom_template/$chrom/g" $code_dir/s1_subset_vcf_for_one_chrom.sh | sed "s/popu_symbol_template/$popu_symbol/g" >$code_dir/s1_subset_vcf_for_one_chrom.sh_${chrom}
-        sbatch $code_dir/s1_subset_vcf_for_one_chrom.sh_${chrom}
+        sed "s/chrom_template/$chrom/g" $code_dir/s1_subset_vcf_for_one_chrom.sh | sed "s/popu_symbol_template/$popu_symbol/g" >$code_dir/s1_subset_vcf_for_one_chrom.sh_${chrom}_${popu_symbol}
+        sbatch $code_dir/s1_subset_vcf_for_one_chrom.sh_${chrom}_${popu_symbol}
     done
 }
 
@@ -45,7 +44,7 @@ get_mutation_load_for_one_chrom() {
 
 export -f subset_vcf_for_one_chrom get_mutation_load_for_one_chrom
 # VARIABLE NAMING TODO:
-export popu_symbol="WSEA"
+export popu_symbol="WAF_CAF_EAF"
 export outgroup_symbol="ref"
 
 export code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd_mypeak/0_get_ancestral"

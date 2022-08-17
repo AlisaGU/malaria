@@ -80,6 +80,48 @@ plot_and_cor_sliding_window <- function(data_for_plot = NULL, title = NULL) {
     return(p)
 }
 
+plot_and_cor_sliding_window_notitle <- function(data_for_plot = NULL) {
+    cols <- brewer.pal(3, "YlOrRd")
+    pal <- colorRampPalette(cols)
+    mycolors <- rev(pal(10))
+    color_value <- c("#000000", "#000000", mycolors)
+    names(color_value) <- c("nopeak", "nopeak500", paste("w", 1:10, sep = ""))
+
+    p <- ggplot(data_for_plot) +
+        geom_boxplot(aes(x = source, y = value, color = source),
+            position = position_dodge(), outlier.shape = NA
+        ) +
+        geom_point(aes(x = source, y = value, color = source),
+            position = position_jitterdodge(), size = 4
+        ) +
+        scale_color_manual(values = color_value) +
+        scale_x_discrete(labels = c( "Control", "Control(500)","Submit~5%", "5~10%", "10~15%", "15~20%", "20~25%", "25~30%", "30~35%", "35~40%", "40~45%", "45~50%")) +
+        labs(y = "6mA sites density") +
+        theme_bw() +
+        theme(
+            strip.background = element_rect(fill = rgb(0, 72, 144, maxColorValue = 255)),
+            strip.text.x = element_text(size = 30, color = "white"),
+            plot.title = element_text(
+                colour = "black",
+                size = 40, vjust = 0.5, hjust = 0.5
+            ),
+            panel.border = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_text(
+                size = 30, color = "black",
+                angle = 45, hjust = 0.5, vjust = 0.5
+            ),
+            axis.text.y = element_text(size = 30, color = "black"),
+            axis.title.x = element_blank(),
+            axis.title.y = element_text(size = 36, color = "black"),
+            legend.title = element_blank(),
+            legend.position = "None",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm"),
+            panel.spacing = unit(3, "lines")
+        )
+    return(p)
+}
+
 read_motif_flank_data <- function(dataname = NULL) {
     data <- read.table(dataname, as.is = T, header = F)
     data1 <- data[, seq(1, ncol(data), by = 2)] / data[, seq(2, ncol(data), by = 2)]
@@ -225,6 +267,15 @@ for (prefix in c("", "_COVgt25", "_COVgt50", "_QVgt20_COVgt10", "_FRACgt20_COVgt
 dev.off()
 
 setwd("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/3th/public/sliding_window")
+pdf("6mA_distri_sliding_window_frac20_cov25.pdf", width = 14, height = 7)
+for (prefix in c( "_FRACgt20_COVgt25")) {
+    data_for_plot <- read_sliding_window_data(dataname = paste0("sliding_window_6mA_distri", prefix))
+    p <- plot_and_cor_sliding_window_notitle(data_for_plot = data_for_plot)
+    print(p)
+}
+dev.off()
+
+setwd("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/3th/public/sliding_window")
 pdf("6mA_distri_sliding_window_ATcountScaled.pdf", width = 14, height = 7)
 for (prefix in c("", "_COVgt25", "_COVgt50", "_QVgt20_COVgt10", "_FRACgt20_COVgt25")) {
     data_for_plot <- read_sliding_window_data(dataname = paste0("sliding_window_6mA_distri_ATcountScaled", prefix))
@@ -238,7 +289,8 @@ pdf("6mA_distri_motif_flank.pdf", width = 14, height = 7)
 # for (prefix in c("", "_COVgt25", "_COVgt50", "_QVgt20_COVgt10", "_FRACgt20_COVgt25")) {
 for (prefix in c("_FRACgt20_COVgt25")) {
     data_for_plot <- read_motif_flank_data(dataname = paste0("motif_flank_pattern_6mA_distri", prefix))
-    p <- plot_motif_flank(data_for_plot = data_for_plot, title = prefix)
+    # p <- plot_motif_flank(data_for_plot = data_for_plot, title = prefix)
+    p <- plot_motif_flank(data_for_plot = data_for_plot, title = "")
     print(p)
 }
 dev.off()
@@ -257,7 +309,8 @@ setwd("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/3
 pdf("6mA_distri_motif_averaged_flank.pdf", width = 14, height = 7)
 for (prefix in c("_FRACgt20_COVgt25")) {
     data_for_plot <- read_motif_and_averaged_flank_data(dataname = paste0("motif_flank_pattern_6mA_distri", prefix))
-    p <- plot_motif_averaged_flank(data_for_plot = data_for_plot, title = prefix)
+    # p <- plot_motif_averaged_flank(data_for_plot = data_for_plot, title = prefix)
+    p <- plot_motif_averaged_flank(data_for_plot = data_for_plot, title = "")
     print(p)
 }
 dev.off()

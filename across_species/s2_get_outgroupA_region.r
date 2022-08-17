@@ -2,6 +2,7 @@
 # 1. packages and external scripts ---------------------------------------- TODO:
 library(seqinr)
 library(stringr)
+library(parallel)
 # 2. functions ------------------------------------------------------------ TODO:
 collapse_region <- function(run = NULL) {
     rundiff <- c(1, diff(run))
@@ -21,28 +22,29 @@ seq_data <- read.fasta(
     seqtype = "DNA", as.string = T
 )
 chrom <- Args[7]
-output <- paste0("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/across_species/P_falciparum_only/", names(seq_data)[2], "/", chrom, ".bed")
+output <- paste0("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/across_species/maf2vcf/", chrom, ".outgroup_region.bed")
+
 # 4. variable setting of test module--------------------------------------- TODO:
-# seq_data<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/across_species/maf2vcf/P_falciparum.P_reichenowi/Pf3D7_01_v3.P_falciparum.P_reichenowi.fasta"
+# seq_data<-"/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/across_species/maf2vcf/Pf3D7_01_v3.include_P_billcollinsi.fasta"
 # seq_data <- read.fasta(
 #     file = seq_data,
 #     seqtype = "DNA", as.string = T
 # )
 # 5. process -------------------------------------------------------------- TODO:
-P_falciparum_index <- which(names(seq_data) == "P_falciparum")
-P_falciparum <- s2c(seq_data[[P_falciparum_index]])
-interested_B <- s2c(seq_data[[-P_falciparum_index]])
+P_falciparum <- s2c(seq_data[[1]])
+# outgroup_A <- s2c(seq_data[[3]])
+# interested_B <- s2c(seq_data[[2]])
+outgroup_A <- s2c(seq_data[[2]])
+interested_B <- s2c(seq_data[[3]])
 
-pos <- which(P_falciparum != "n" & P_falciparum != "-")
+pos <- which(outgroup_A != "n" & outgroup_A != "-")
 
 
 gap_in_ref <- which(P_falciparum == "-")
-a <- pos
-b <- sapply(1:length(a), function(x) {
-    a[x] - length(which(gap_in_ref <= a[x]))
-})
-pos <- b
-
-consistent_region_bed <- collapse_region(run = pos)
+pos <- mclapply(1:length(pos), function(x) {
+    pos[x] - length(which(gap_in_ref <= pos[x]))
+}, mc.cores = 4)
+pos <- do.call(c, pos)
+consistent_region_bed <- collapse_region(run = unique(pos))
 result <- data.frame(chrom = chrom, consistent_region_bed)
 write.table(result, output, quote = F, row.names = F, col.names = F, sep = "\t")

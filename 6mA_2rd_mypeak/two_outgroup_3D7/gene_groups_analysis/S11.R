@@ -133,7 +133,7 @@ gene_mutation_density_direc_with_peak_strength <- function() {
     ggplot(data2, aes(x = class, y = average_peak_fold_enrichment)) +
         geom_point(aes(color = class), position = position_jitterdodge(), size = 8, alpha = 0.5) +
         geom_boxplot(aes(color = class), size = 3, show.legend = FALSE, outlier.shape = NA, alpha = 0.1) +
-        stat_compare_means(aes(label = paste0("p = ", ..p.format..)), size = 12, label.x.npc = 0.2, label.y.npc = 0.9) +
+        stat_compare_means(aes(label = paste0("p = ", ..p.format..)), size = 12, label.x.npc = "left", label.y.npc = 0.85) +
         scale_color_manual(values = c("STEVOR" = "#db161b", "non-STEVOR" = "#1c4e6c")) +
         theme_bw() +
         labs(y = "Gene-associated peaks'\n fold enrichment") +
@@ -154,7 +154,8 @@ gene_mutation_density_direc_with_peak_strength <- function() {
             axis.title.y = element_text(size = 40, color = "black"),
             legend.title = element_blank(),
             legend.text = element_text(size = 24, color = "black"),
-            legend.position = "bottom",
+            # legend.position = "bottom",
+            legend.position = c(0.35,0.95),
             plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm"),
             panel.spacing = unit(3, "lines")
         )
@@ -172,7 +173,7 @@ gene_mutation_density_ratio_cor_with_peak_strength <- function() {
     result <- result[!is.na(result$average_peak_fold_enrichment) & !is.infinite(result$peak_divided_control), ]
     p1 <- ggplot(result, aes(x = average_peak_fold_enrichment, y = peak_divided_control)) +
         geom_point(color = "#8d8d8d", fill = "#78addc", size = 8, alpha = 0.5, shape = 21) +
-        labs(y = expression(frac(Peak, Control)), x = "Gene-associated peaks'\n fold enrichment") +
+        labs(y = expression(frac('Mutation density'[Peak], 'Mutation density'[Control])), x = "Gene-associated peaks'\n fold enrichment") +
         theme_bw() +
         theme(
             strip.background = element_rect(fill = rgb(0, 72, 144, maxColorValue = 255)),
@@ -325,6 +326,39 @@ plot_independent_with_fold_enrichment <- function() {
     p + geom_point(aes(color = fold_enrichment_class), size = 1) + geom_line(aes(group = gene_name), color = "black")
     ggsave("gene_5_sets_peak_control_mutation_density_comparison_independ_direc.pdf", width = 21, height = 12)
 }
+
+shift_legend2 <- function(p) {
+    # check if p is a valid object
+    if (!(inherits(p, "gtable"))) {
+        if (inherits(p, "ggplot")) {
+            gp <- ggplotGrob(p) # convert to grob
+        } else {
+            message("This is neither a ggplot object nor a grob generated from ggplotGrob. Returning original plot.")
+            return(p)
+        }
+    } else {
+        gp <- p
+    }
+
+    # check for unfilled facet panels
+    facet.panels <- grep("^panel", gp[["layout"]][["name"]])
+    empty.facet.panels <- sapply(facet.panels, function(i) "zeroGrob" %in% class(gp[["grobs"]][[i]]),
+        USE.NAMES = F
+    )
+    empty.facet.panels <- facet.panels[empty.facet.panels]
+
+    if (length(empty.facet.panels) == 0) {
+        message("There are no unfilled facet panels to shift legend into. Returning original plot.")
+        return(p)
+    }
+
+    # establish name of empty panels
+    empty.facet.panels <- gp[["layout"]][empty.facet.panels, ]
+    names <- empty.facet.panels$name
+
+    # return repositioned legend
+    reposition_legend(p, "center", panel = names)
+}
 # 3. input ---------------------------------------------------------------- TODO:
 setwd("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/ESEA_WSEA_OCE_SAM_SAS/two_outgroup_consistent_in_core_and_noncore/gene_5_sets")
 gene_sets <- c("DR", "HDR", "RNA_translation", "STEVOR", "VAR")
@@ -340,3 +374,46 @@ plot_independent()
 
 
 data_for_plot <- read_data_with_fold_enrichment()
+p <- ggplot(data = data_for_plot, aes(x = peak_type, y = mutation_density_value)) +
+    scale_y_continuous(expand = expansion(mult = 0.12)) +
+    facet_wrap(vars(gene_set_type), scales = "free_y") +
+    geom_boxplot(aes(color = peak_type, group = peak_type), outlier.shape = NA, show.legend = FALSE, lwd = 1.5) +
+    geom_point(aes(fill = fold_enrichment_class), size = 8, shape = 21, color = "white", stroke = 10^(-10)) +
+    stat_compare_means(comparisons = list(c("control", "peak")), aes(label = paste0("p = ", ..p.format..)), size = 12) +
+    scale_x_discrete(labels = c("Control", "Peak")) +
+    scale_fill_manual(values = c(
+        "1" = "#deebf7", "1.5" = "#c6dbef",
+        "2" = "#9ecae1", "2.5" = "#6baed6", "3" = "#4292c6",
+        "3.5" = "#2171b5", "4" = "#08519c", "4.5" = "#08306b", "NA" = "grey"
+    )) +
+    scale_color_manual(values = c(
+        "control" = "grey", "peak" = "red"
+    )) +
+    theme_bw() +
+    labs(y = "Mutation density") +
+    theme(
+        strip.background = element_rect(fill = rgb(0, 72, 144, maxColorValue = 255)),
+        strip.text.x = element_text(size = 30, color = "white"),
+        panel.border = element_blank(),
+        # panel.grid = element_blank(),
+        axis.line = element_line(colour = "black"),
+        # axis.text.x = element_text(size = 30, color = "black", angle = 45, hjust = 0.7, vjust = 0.7),
+        axis.text.x = element_text(size = 36, color = "black"),
+        axis.text.y = element_text(size = 36, color = "black"),
+        plot.title = element_text(
+            colour = "black",
+            size = 40, vjust = 0.5, hjust = 0.5
+        ),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 40, color = "black"),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 24, color = "black"),
+        legend.position = "bottom", legend.direction = "horizontal",
+        plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm"),
+        panel.spacing = unit(3, "lines")
+    ) +
+    guides(fill = guide_legend(nrow = 3, byrow = TRUE))
+
+pdf("gene_5_sets_peak_control_mutation_density_comparison_independ_p_value_on_the_top.pdf", width = 18, height = 12)
+shift_legend2(p)
+dev.off()

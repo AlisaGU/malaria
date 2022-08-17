@@ -132,7 +132,9 @@ get_type_for_one_base <- function(ancestor = NULL, derived_allele = NULL) {
 # 3. input ----------------------------------------------------------------
 Args <- commandArgs()
 vcf_data <- Args[6]
-output <- paste0(dirname(vcf_data), "/", gsub(".vcf.gz", "", basename(vcf_data)), "_polysite.bed")
+# output <- paste0(dirname(vcf_data), "/", gsub(".vcf.gz", "", basename(vcf_data)), "_polysite.bed")
+
+output <- paste0(dirname(vcf_data), "/", gsub(".vcf.gz", "", basename(vcf_data)), "_polysite_repeat.bed")
 
 bcftools <- "/picb/evolgen/users/gushanshan/GenomeAnnotation/bcftools/bcftools-1.10.2/bcftools_install/bin/bcftools"
 # 4. variable setting of test module---------------------------------------
