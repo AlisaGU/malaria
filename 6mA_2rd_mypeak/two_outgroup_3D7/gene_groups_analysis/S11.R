@@ -361,7 +361,8 @@ shift_legend2 <- function(p) {
 }
 # 3. input ---------------------------------------------------------------- TODO:
 setwd("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/ESEA_WSEA_OCE_SAM_SAS/two_outgroup_consistent_in_core_and_noncore/gene_5_sets")
-gene_sets <- c("DR", "HDR", "RNA_translation", "STEVOR", "VAR")
+gene_sets <- c("DR", "HDR", "RNA_translation", "STEVOR", "VAR","RIF")
+# gene_sets <- c("DR", "HDR", "RNA_translation", "STEVOR", "VAR")
 # 4. variable setting of test module--------------------------------------- TODO:
 
 

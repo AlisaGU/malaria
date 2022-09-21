@@ -1,0 +1,1 @@
+/picb/evolgen2/users/gushanshan/projects/malaria/code/6mA_2rd_mypeak/genome_different_parts_motif_distri/c3_plot_diff_denominator.r

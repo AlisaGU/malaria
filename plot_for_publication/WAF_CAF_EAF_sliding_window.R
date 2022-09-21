@@ -1,0 +1,1 @@
+/picb/evolgen2/users/gushanshan/projects/malaria/code/6mA_2rd_mypeak/whole_chromosome/ss3_3_1_plot.R_WAF_CAF_EAF_sliding_window

@@ -25,9 +25,17 @@ subset_vcf_for_one_chrom() {
     $tabix $popu_PASS_variant
 }
 
+subset_vcf_VQSLOD_gt0() {
+    for chrom in $(echo $chroms | tr " " "\n"); do
+        sed "s/chrom_template/$chrom/g" $code_dir/s1_subset_vcf_only_VQSLOD_gt0_vcf_for_one_chrom.sh | sed "s/popu_symbol_template/$popu_symbol/g" >$code_dir/s1_subset_vcf_only_VQSLOD_gt0_vcf_for_one_chrom.sh_${chrom}_${popu_symbol}
+        sbatch $code_dir/s1_subset_vcf_only_VQSLOD_gt0_vcf_for_one_chrom.sh_${chrom}_${popu_symbol}
+    done
+}
+
 get_popu_and_outgroup_vcf() {
     # $code_dir/s1_1_get_popu_outgroup_sample_list_ref_popuid.R $popu_symbol $outgroup_symbol
-    subset_vcf
+    # subset_vcf
+    subset_vcf_VQSLOD_gt0
 }
 
 get_mutation_load_for_all_chroms() {

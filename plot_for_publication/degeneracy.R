@@ -1,0 +1,1 @@
+/picb/evolgen2/users/gushanshan/projects/malaria/code/6mA_2rd_mypeak/codon/c3_plot_degeneracy.R

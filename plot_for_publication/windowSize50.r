@@ -1,0 +1,1 @@
+/picb/evolgen2/users/gushanshan/projects/malaria/code/6mA_2rd_mypeak/two_outgroup_3D7/motif_Predict_peak/c2_plot_distribution_windowSize50.R

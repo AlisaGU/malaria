@@ -63,7 +63,7 @@ exclude_inconsistent_site_from_window() {
 compute_mutation_density() {
     var_type=$1
 
-    mutation_density_dir=$global_output_dir/$popu_symbol/$histone_modification_type/sliding_window/relative.0.05/mutation_density
+    mutation_density_dir=$global_output_dir/$popu_symbol/$histone_modification_type/sliding_window_two_outgroup_consistent/relative.0.05/mutation_density
     mkdir -p $mutation_density_dir
     mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count
     rm -rf $mean_variant_count
@@ -89,7 +89,7 @@ compute_mutation_density() {
 compute_mutation_density_no6ma() {
     var_type=$1
 
-    mutation_density_dir=$global_output_dir/$popu_symbol/$histone_modification_type/sliding_window/relative.0.05/mutation_density
+    mutation_density_dir=$global_output_dir/$popu_symbol/$histone_modification_type/sliding_window_two_outgroup_consistent/relative.0.05/mutation_density
     mkdir -p $mutation_density_dir
     mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count_no6mA
     rm -rf $mean_variant_count

@@ -20,9 +20,9 @@ read_peakbase_motif_and_flank_scale_by_propor_mutation <- function(flank_length 
     # read propor_factor
     ori_path <- getwd()
     if (motif == "GAWGAW") {
-        setwd(paste0("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent/single_motif_pattern/", motif))
+        setwd(paste0("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent/single_motif_pattern_GAWGAW_asWhole/", motif))
     } else {
-        setwd(paste0("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent/single_motif_pattern/all_motifs/", motif))
+        setwd(paste0("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent/single_motif_pattern_all_motifs_asWhole/all_motifs/", motif))
     }
     propor_data <- read_propor()
     setwd(ori_path)
@@ -210,8 +210,8 @@ plot_motif_scale_by_propor <- function(data_for_plot = NULL, motif = NULL, title
     color_value_N2N <- c("motif" = "#b2182b", "motif_flank" = "#2166ac")
 
     p <- ggplot(data_for_plot, aes(x = site_f, y = value, color = source)) +
-        geom_boxplot(position = position_dodge(), outlier.shape = NA) +
-        geom_point(position = position_jitterdodge(), size = 4) +
+        geom_boxplot(position = position_dodge(), outlier.shape = NA, width = 0.5, size = 1) +
+        geom_point(size = 6, position = position_jitterdodge()) +
         scale_color_manual(values = color_value_N2N, labels = c("Motif", "Flank")) +
         # stat_compare_means(
         #     ref.group = "base",
@@ -219,27 +219,31 @@ plot_motif_scale_by_propor <- function(data_for_plot = NULL, motif = NULL, title
         #     label = "p.signif", paired = T, size = 10
         # ) +
         # labs(y = "Scaled (by propor) mutation density") +
-        labs(y = "Scaled mutation density") +
-        scale_y_continuous(limits = c(0, 5)) +
-        facet_wrap(~variant, nrow = 2, ncol = 1) +
+        labs(y = "Relative mutation density") +
+        # scale_y_continuous(limits = c(0, 5)) +
+        # facet_wrap(~variant, nrow = 2, ncol = 1) +
+        scale_x_discrete(labels = c(paste("S", 1:6, sep = ""), paste("F", 1:10, sep = ""))) +
         theme_bw() +
-        geom_hline(yintercept = 1, color = "red", linetype = "dashed") +
+        geom_hline(yintercept = 1, color = "black", linetype = "dashed") +
         ggtitle(title) +
         theme(
-            strip.background = element_rect(fill = rgb(0, 72, 144, maxColorValue = 255)),
-            strip.text.x = element_text(size = 30, color = "white"),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            strip.background = element_blank(),
             panel.border = element_blank(),
+            # strip.background = element_rect(fill = rgb(0, 72, 144, maxColorValue = 255)),
+            strip.text.x = element_text(size = 44, color = "black", face = "bold"),
+            # panel.border = element_blank(),
             axis.line = element_line(colour = "black"),
-            axis.text.x = element_text(size = 30, color = "black", angle = 45, hjust = 0.5, vjust = 0.5),
-            axis.text.y = element_text(size = 30, color = "black"),
-            plot.title = element_text(
-                colour = "black",
-                size = 40, vjust = 0.5, hjust = 0.5
+            axis.text.x = element_text(
+                size = 36, color = "black",
+                # angle = 45, hjust = 0.5, vjust = 0.5
             ),
+            axis.text.y = element_text(size = 36, color = "black"),
             axis.title.x = element_blank(),
-            axis.title.y = element_text(size = 36, color = "black"),
+            axis.title.y = element_text(size = 40, color = "black"),
             legend.title = element_blank(),
-            legend.text = element_text(size = 24, color = "black"),
+            legend.text = element_text(size = 30, color = "black"),
             legend.position = "bottom",
             plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm"),
             panel.spacing = unit(3, "lines")
@@ -269,25 +273,26 @@ names(titles) <- c(
 
 setwd(global_dir)
 ps <- list()
-# pdf(file = "scaled_by_propor_peakbase_motif_and_flank_global_variants.remove_close_overlap_all_snp.pdf", height = 10, width = 15)
+pdf(file = "scaled_by_propor_peakbase_motif_and_flank_global_variants.remove_close_overlap_all_snp_submotif.pdf", height = 8, width = 16)
 # for (motif in c("GAMSAA", "GAHGAW", "GAACAA", "GAAGAA", "GATGAA", "GATGAT")) {
-#     path <- paste0(global_dir, "/", motif)
-#     setwd(path)
-#     data_for_plot <- read_peakbase_motif_and_flank_scale_by_propor_mutation(flank_length = 10, motif = motif, variants = variants)
-#     # p <- plot_motif_scale_by_propor(data_for_plot = data_for_plot, motif = motif, title = as.character(titles[motif]))
-#     p <- plot_motif_scale_by_propor(data_for_plot = data_for_plot %>% filter(variant == "SNPs"), motif = motif, title = as.character(titles[motif]))
-#     ps[[motif]] <- p
-#     print(p)
-# }
-# dev.off()
+for (motif in c("GAAGAA", "GATGAA", "GATGAT")) {
+    path <- paste0(global_dir, "/../each_site_all_motifs_asWhole_LI_formula/", motif)
+    setwd(path)
+    data_for_plot <- read_peakbase_motif_and_flank_scale_by_propor_mutation(flank_length = 10, motif = motif, variants = variants)
+    # p <- plot_motif_scale_by_propor(data_for_plot = data_for_plot, motif = motif, title = as.character(titles[motif]))
+    p <- plot_motif_scale_by_propor(data_for_plot = data_for_plot %>% filter(variant == "SNPs"), motif = motif, title = "")
+    ps[[motif]] <- p
+    print(p)
+}
+dev.off()
 
-pdf(file = "scaled_by_propor_peakbase_motif_and_flank_global_variants.remove_close_overlap_all_snp.pdf", height = 10, width = 15)
+pdf(file = "scaled_by_propor_peakbase_motif_and_flank_global_variants.remove_close_overlap_all_snp.pdf", height = 8, width = 16)
 for (motif in c("GAWGAW")) {
     path <- paste0(global_dir, "/", motif)
     setwd(path)
     data_for_plot <- read_peakbase_motif_and_flank_scale_by_propor_mutation(flank_length = 10, motif = motif, variants = variants)
     # p <- plot_motif_scale_by_propor(data_for_plot = data_for_plot, motif = motif, title = as.character(titles[motif]))
-    p <- plot_motif_scale_by_propor(data_for_plot = data_for_plot %>% filter(variant == "SNPs"), motif = motif, title = as.character(titles[motif]))
+    p <- plot_motif_scale_by_propor(data_for_plot = data_for_plot %>% filter(variant == "SNPs"), motif = motif, title = "")
     ps[[motif]] <- p
     print(p)
 }

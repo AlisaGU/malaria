@@ -4,14 +4,15 @@
 #SBATCH -p evolgen
 #SBATCH -o %x-%j.out
 # FUNCTIONS TODO:
+## 不考虑祖先型信息，直接统计变异信息
 get_average_variant_count_nomatter_ancestor() {
     var_type=$1
 
     for por in $(echo $relative_por | tr " " "\n"); do
         mutation_density_dir=$global_output_dir/$popu_symbol/${sliding_window_type}/relative$por/mutation_density
         mkdir -p $mutation_density_dir
-        mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count
-        # mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count_count
+        mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count_nomatter_ancestor
+        # mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count_count_nomatter_ancestor
 
         rm -rf $mean_variant_count
 
@@ -55,7 +56,59 @@ get_average_variant_count_for_chrom_nomatter_ancestor() {
     chrom_region_mutation_count_mean1=$(printf "%0.6f" $chrom_region_mutation_count_mean)
     echo $chrom_region_mutation_count_mean1
 }
+##
+get_average_variant_count_correct_indel() {
+    var_type=$1
 
+    for por in $(echo $relative_por | tr " " "\n"); do
+        mutation_density_dir=$global_output_dir/$popu_symbol/${sliding_window_type}/relative$por/mutation_density
+        mkdir -p $mutation_density_dir
+        mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count_correct_indel
+        # mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count_count_correct_indel
+
+        rm -rf $mean_variant_count
+
+        for chrom in $(echo $autosomes | tr " " "\n"); do
+            chrom_var_count=""
+
+            regions="$chrom_bed_dir/${chrom}.nopeak.bed"
+
+            for w in $(seq 1 $window_number); do
+                regions+=" $chrom_bed_dir/${sliding_window_type}/relative.${por}/${chrom}/w$w.bed"
+            done
+            for region_bed in $(echo $regions | tr " " "\n"); do
+                chrom_var_count+=" $(get_average_variant_count_for_chrom_correct_indel $chrom $region_bed)"
+            done
+            echo $chrom_var_count >>$mean_variant_count
+        done
+    done
+
+}
+
+get_average_variant_count_for_chrom_correct_indel() {
+    chrom=$1
+    region_bed=$2
+    chrom_number=$(echo $chrom | sed 's/Pf3D7_//g' | sed 's/_v3//g')
+
+    chrom_region_len=$(awk '{print $3-$2}' $region_bed | awk '{s+=$1} END {print s}')
+    chrom_mutation_count=""
+    if [ $var_type == "snps" ]; then
+        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $6}' | awk '{s+=$1} END {print s}')
+    elif [ $var_type == "indels" ]; then
+        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $9}' | awk '{s+=$1} END {print s}')
+    fi
+
+    if [ $chrom_mutation_count -gt 0 ] 2>/dev/null; then
+        :
+    else
+        chrom_mutation_count=0
+    fi
+    # echo $chrom_mutation_count $chrom_region_len
+    chrom_region_mutation_count_mean=$(echo "scale=10;${chrom_mutation_count}/${chrom_region_len}" | bc)
+    chrom_region_mutation_count_mean1=$(printf "%0.6f" $chrom_region_mutation_count_mean)
+    echo $chrom_region_mutation_count_mean1
+}
+##
 get_average_variant_count_correct_indel_remove_popu_monomorphism() {
     var_type=$1
 
@@ -143,7 +196,7 @@ get_average_variant_count_for_chrom_correct_indel_remove_popu_monomorphism() {
     # chrom_region_mutation_count_mean1=$(printf "%0.6f" $chrom_region_mutation_count_mean)
     # echo $chrom_region_mutation_count_mean1
 }
-
+##
 get_average_variant_count_correct_indel_just_in_population() {
     var_type=$1
 
@@ -232,94 +285,7 @@ get_average_variant_count_for_chrom_correct_indel_just_in_population() {
     echo $chrom_region_mutation_count_mean1
 }
 
-get_average_variant_count_correct_indel() {
-    var_type=$1
-
-    for por in $(echo $relative_por | tr " " "\n"); do
-        mutation_density_dir=$global_output_dir/$popu_symbol/${sliding_window_type}/relative$por/mutation_density
-        mkdir -p $mutation_density_dir
-        # mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count
-        mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count_count
-
-        rm -rf $mean_variant_count
-
-        for chrom in $(echo $autosomes | tr " " "\n"); do
-            chrom_var_count=""
-
-            regions="$chrom_bed_dir/${chrom}.nopeak.bed"
-
-            for w in $(seq 1 $window_number); do
-                regions+=" $chrom_bed_dir/${sliding_window_type}/relative.${por}/${chrom}/w$w.bed"
-            done
-            for region_bed in $(echo $regions | tr " " "\n"); do
-                chrom_var_count+=" $(get_average_variant_count_for_chrom_correct_indel $chrom $region_bed)"
-            done
-            echo $chrom_var_count >>$mean_variant_count
-        done
-    done
-
-}
-
-get_average_variant_count_for_chrom_correct_indel() {
-    chrom=$1
-    region_bed=$2
-    chrom_number=$(echo $chrom | sed 's/Pf3D7_//g' | sed 's/_v3//g')
-
-    chrom_region_len=$(awk '{print $3-$2}' $region_bed | awk '{s+=$1} END {print s}')
-    chrom_mutation_count=""
-    if [ $var_type == "allvar" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $6+$9}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "snps" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $6}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "indels" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $9}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "transition" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $4}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "transversion" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $5}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "insertion" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $7}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "deletion" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $8}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "A2G" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $10}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "G2A" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $11}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "T2C" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $12}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "C2T" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $13}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "A2C" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $14}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "A2T" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $15}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "G2C" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $16}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "G2T" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $17}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "C2A" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $18}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "C2G" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $19}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "T2A" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $20}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "T2G" ]; then
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $21}' | awk '{s+=$1} END {print s}')
-    elif [ $var_type == "fixation" ]; then # 这里指snp的固定
-        chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '$6==1 && $9==0{print $0}' | wc -l)
-    fi
-
-    if [ $chrom_mutation_count -gt 0 ] 2>/dev/null; then
-        :
-    else
-        chrom_mutation_count=0
-    fi
-    echo $chrom_mutation_count $chrom_region_len
-    # chrom_region_mutation_count_mean=$(echo "scale=10;${chrom_mutation_count}/${chrom_region_len}" | bc)
-    # chrom_region_mutation_count_mean1=$(printf "%0.6f" $chrom_region_mutation_count_mean)
-    # echo $chrom_region_mutation_count_mean1
-}
-
+##
 get_average_variant_count() {
     var_type=$1
 
@@ -839,7 +805,8 @@ popu_symbol=$1
 code_dir="/picb/evolgen/users/gushanshan/projects/malaria/code/6mA_2rd/whole_chromosome"
 macs2_out_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output"
 global_output_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation"
-variant_dir=$global_output_dir/$popu_symbol/variant
+## variant_dir 指的是不依赖reference的变异信息的所在目录，一般命名为variant_3D7
+variant_dir=$global_output_dir/$popu_symbol/variant_3D7
 chrom_bed_dir=$macs2_out_dir/chrom
 
 relative_por="0.05"
@@ -864,7 +831,7 @@ seqkit="/picb/evolgen/users/gushanshan/GenomeAnnotation/seqkit/seqkit"
 
 # PROCESS TODO:
 set -x
-mkdir -p $base_proporation_dir
+# mkdir -p $base_proporation_dir
 
 # mkdir -p $mutation_density_dir
 # get_average_variant_count "allvar"
@@ -914,11 +881,11 @@ mkdir -p $base_proporation_dir
 get_average_variant_count_correct_indel "snps"
 get_average_variant_count_correct_indel "indels"
 
-get_average_variant_count_correct_indel_just_in_population "snps"
-get_average_variant_count_correct_indel_just_in_population "indels"
+# get_average_variant_count_correct_indel_just_in_population "snps"
+# get_average_variant_count_correct_indel_just_in_population "indels"
 
-get_average_variant_count_correct_indel_remove_popu_monomorphism "snps"
-get_average_variant_count_correct_indel_remove_popu_monomorphism "indels"
+# get_average_variant_count_correct_indel_remove_popu_monomorphism "snps"
+# get_average_variant_count_correct_indel_remove_popu_monomorphism "indels"
 
-get_average_variant_count_nomatter_ancestor "snps" &
-get_average_variant_count_nomatter_ancestor "indels" &
+get_average_variant_count_nomatter_ancestor "snps"
+get_average_variant_count_nomatter_ancestor "indels"

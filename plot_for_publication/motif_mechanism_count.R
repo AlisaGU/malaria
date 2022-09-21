@@ -1,0 +1,1 @@
+/picb/evolgen2/users/gushanshan/projects/malaria/code/6mA_2rd/two_outgroup_3D7/motif_mechanism/s5_plot.R_ESEA_WSEA_OCE_SAM_SAS

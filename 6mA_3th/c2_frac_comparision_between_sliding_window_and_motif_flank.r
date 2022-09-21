@@ -47,7 +47,7 @@ motif_flank <- read.table("/picb/evolgen/users/gushanshan/projects/malaria/dataA
 
 sliding_window_frac <- sliding_window[, seq(1, ncol(sliding_window), by = 2)] / sliding_window[, seq(2, ncol(sliding_window), by = 2)]
 rownames(sliding_window) <- 1:14
-colnames(sliding_window)
+
 motif_flank_frac <- motif_flank[, seq(1, ncol(motif_flank), by = 2)] / motif_flank[, seq(2, ncol(motif_flank), by = 2)]
 data <- rbind(sliding_window_frac, motif_flank_frac[, 1:3])
 ggplot(data) +

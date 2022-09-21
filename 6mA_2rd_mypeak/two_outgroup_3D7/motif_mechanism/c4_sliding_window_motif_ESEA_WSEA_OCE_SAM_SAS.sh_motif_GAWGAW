@@ -1,0 +1,171 @@
+#!/bin/bash
+#SBATCH -n 1
+#SBATCH -A evolgen-grp
+#SBATCH -p evolgen
+#SBATCH -o %x-%j.out
+#SBATCH --error=%x-%j.err
+
+# FUNCTIONS TODO:
+locate_motif() {
+    mkdir -p $motif_dir
+    cd $motif_dir
+
+    for autosome in $(echo $autosomes | tr " " "\n"); do
+        cat $core_peak_seq_dir/${autosome}.peak.core.consistent.fa | $seqkit locate -i -d -f $motif_pattern --bed >${autosome}.motif.bed
+    done
+
+    cd -
+}
+
+get_motif_in_sliding_window() {
+    for chrom in $(echo $autosomes | tr " " "\n"); do
+        awk '{print $0"\t""motif_"NR}' ${motif_dir}/${chrom}.motif.bed | awk '{split($1,coord,/[_-]/);s=coord[4]+$2-1;e=coord[4]+$3-1;print coord[1]"_"coord[2]"_"coord[3]"\t"s"\t"e"\t"$7}' >${motif_dir}/${chrom}.intermediate
+
+        for w in $(seq 1 10); do
+            $bedtools intersect -wa -a ${motif_dir}/${chrom}.intermediate -b $chrom_bed_dir/${sliding_window_type}/relative.${relative_por}/${chrom}/w$w.bed >${motif_dir}/${chrom}.w$w.intermediate
+            $code_dir/s4_transfer_intermediate_2_centralMotif.R ${motif_dir}/${chrom}.w$w.intermediate ${motif_dir}/${chrom}.motif.bed $motif_dir/${chrom}.w$w.bed
+
+            rm -rf ${motif_dir}/${chrom}.w$w.intermediate
+        done
+        rm -rf ${motif_dir}/${chrom}.intermediate
+    done
+
+}
+
+get_block_bed_for_motif() {
+    mkdir -p $motif_dir
+    for bed in $(/usr/bin/ls $motif_dir | grep -v "motif"); do
+        cat $code_dir/s4_get_block_bed_for_motif_one_chrom.sh | sed "s@bed_template@$motif_dir/$bed@g" | sed "s@region_bed_dir_template@$motif_dir@g" >$code_dir/s4_get_block_bed_for_motif_one_chrom.sh_${bed}
+        sbatch $code_dir/s4_get_block_bed_for_motif_one_chrom.sh_${bed}
+    done
+}
+
+get_average_variant_count() {
+    get_average_variant_count_each_popu $popu_symbol "snps"
+    get_average_variant_count_each_popu $popu_symbol "indels"
+}
+
+get_average_variant_count_each_popu() {
+    popu_symbol=$1
+    var_type=$2
+
+    mean_variant_count=$mutation_density_dir/${var_type}_mean_variant_count
+    rm -rf $mean_variant_count
+
+    for chrom in $(echo $autosomes | tr " " "\n"); do
+        chrom_var_count=""
+
+        regions="$macs2_two_outgroup_consistent_dir/${chrom}.nopeak.bed"
+        for w in $(seq 1 10); do
+            regions+=" $motif_dir/$chrom.w$w.bed"
+        done
+
+        for region_bed in $(echo $regions | tr " " "\n"); do
+            chrom_var_count+=" $(get_average_variant_count_for_chrom_whole_region $region_bed $popu_symbol)"
+            # chrom_var_count+=" $(get_average_variant_count_for_chrom_whole_region1 $region_bed $popu_symbol)"
+
+        done
+        echo $chrom_var_count >>$mean_variant_count
+    done
+}
+
+get_average_variant_count_for_chrom_whole_region() {
+    region_bed=$1
+    popu_symbol=$2
+    chrom_number=$(basename $region_bed | grep -o "Pf3D7_.*_v3" | sed 's/Pf3D7_//g' | sed 's/_v3//g')
+    variant_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/${popu_symbol}/variant_two_group"
+
+    chrom_region_len=$(awk '{print $3-$2}' $region_bed | awk '{s+=$1} END {print s}')
+    chrom_mutation_count=""
+
+    if [ $(basename $region_bed | grep "nopeak" | wc -l) -eq 1 ]; then
+        if [ $var_type == "snps" ]; then
+            chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_polysite.bed -b $region_bed | awk '{print $6}' | awk '{s+=$1} END {print s}')
+        elif [ $var_type == "indels" ]; then
+            chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_polysite.bed -b $region_bed | awk '{print $9}' | awk '{s+=$1} END {print s}')
+        fi
+    else
+        if [ $var_type == "snps" ]; then
+            chrom_mutation_count=$(awk '{split($1,coord,/[_-]/);s=coord[4]+$2-1;e=coord[4]+$3-1;print coord[1]"_"coord[2]"_"coord[3]"\t"s"\t"e}' $region_bed | $bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_polysite.bed -b stdin | awk '{print $6}' | awk '{s+=$1} END {print s}')
+        elif [ $var_type == "indels" ]; then
+            chrom_mutation_count=$(awk '{split($1,coord,/[_-]/);s=coord[4]+$2-1;e=coord[4]+$3-1;print coord[1]"_"coord[2]"_"coord[3]"\t"s"\t"e}' $region_bed | $bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_polysite.bed -b stdin | awk '{print $9}' | awk '{s+=$1} END {print s}')
+        fi
+
+    fi
+
+    if [ $chrom_mutation_count -gt 0 ] 2>/dev/null; then
+        echo ""
+    else
+        chrom_mutation_count=0
+    fi
+
+    chrom_region_mutation_count_mean=$(echo "scale=10;${chrom_mutation_count}/${chrom_region_len}" | bc)
+    chrom_region_mutation_count_mean1=$(printf "%0.6f" $chrom_region_mutation_count_mean)
+    echo $chrom_region_mutation_count_mean1
+
+    # echo $chrom_mutation_count
+}
+
+get_average_variant_count_for_chrom_whole_region1() {
+    region_bed=$1
+    popu_symbol=$2
+    chrom_number=$(basename $region_bed | grep -o "Pf3D7_.*_v3" | sed 's/Pf3D7_//g' | sed 's/_v3//g')
+    variant_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/${popu_symbol}/variant_3D7"
+
+    chrom_region_len=$(awk '{print $3-$2}' $region_bed | awk '{s+=$1} END {print s}')
+    chrom_mutation_count=""
+
+    if [ $(basename $region_bed | grep "nopeak" | wc -l) -eq 1 ]; then
+        if [ $var_type == "snps" ]; then
+            chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $6}' | awk '{s+=$1} END {print s}')
+        elif [ $var_type == "indels" ]; then
+            chrom_mutation_count=$($bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b $region_bed | awk '{print $9}' | awk '{s+=$1} END {print s}')
+        fi
+    else
+        if [ $var_type == "snps" ]; then
+            chrom_mutation_count=$(awk '{split($1,coord,/[_-]/);s=coord[4]+$2-1;e=coord[4]+$3-1;print coord[1]"_"coord[2]"_"coord[3]"\t"s"\t"e}' $region_bed | $bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b stdin | awk '{print $6}' | awk '{s+=$1} END {print s}')
+        elif [ $var_type == "indels" ]; then
+            chrom_mutation_count=$(awk '{split($1,coord,/[_-]/);s=coord[4]+$2-1;e=coord[4]+$3-1;print coord[1]"_"coord[2]"_"coord[3]"\t"s"\t"e}' $region_bed | $bedtools intersect -a $variant_dir/${popu_symbol}_PASS_${chrom_number}_correct_spanning_deletion_polysite.bed -b stdin | awk '{print $9}' | awk '{s+=$1} END {print s}')
+        fi
+
+    fi
+
+    if [ $chrom_mutation_count -gt 0 ] 2>/dev/null; then
+        echo ""
+    else
+        chrom_mutation_count=0
+    fi
+
+    chrom_region_mutation_count_mean=$(echo "scale=10;${chrom_mutation_count}/${chrom_region_len}" | bc)
+    chrom_region_mutation_count_mean1=$(printf "%0.6f" $chrom_region_mutation_count_mean)
+    echo $chrom_region_mutation_count_mean1
+}
+# VARIABLE NAMING TODO:
+popu_symbol="ESEA_WSEA_OCE_SAM_SAS"
+motif_id="GAWGAW"
+relative_por="0.05"
+
+code_dir="/picb/evolgen2/users/gushanshan/projects/malaria/code/6mA_2rd_mypeak/two_outgroup_3D7/motif_mechanism"
+motif_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent/motif_${motif_id}/motif_loc" ## 这是位于信号区的peak位置
+sliding_window_type="sliding_window"
+mutation_density_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/${popu_symbol}/motif_${motif_id}/sliding_window_mutation_density"
+core_peak_seq_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent/peak_seq"
+genome="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/ref_genome/pf_3D7/genome/PlasmoDB-36_Pfalciparum3D7_Genome.fasta"
+motif_pattern="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/motifs/GAWGAW"
+chrom_bed_dir=/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/chrom
+
+bed_global_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent"
+macs2_two_outgroup_consistent_dir=$bed_global_dir
+autosomes="Pf3D7_01_v3 Pf3D7_02_v3 Pf3D7_03_v3 Pf3D7_04_v3 Pf3D7_05_v3 Pf3D7_06_v3 Pf3D7_07_v3 Pf3D7_08_v3 Pf3D7_09_v3 Pf3D7_10_v3 Pf3D7_11_v3 Pf3D7_12_v3 Pf3D7_13_v3 Pf3D7_14_v3"
+
+bedtools="/picb/evolgen/users/gushanshan/software/bedtools/bedtools"
+seqkit="/picb/evolgen/users/gushanshan/GenomeAnnotation/seqkit/seqkit"
+# VARIABLE NAMING for test module TODO:
+
+# PROCESS TODO:
+# set -x
+mkdir -p $mutation_density_dir
+locate_motif
+get_motif_in_sliding_window
+# get_block_bed_for_motif
+get_average_variant_count

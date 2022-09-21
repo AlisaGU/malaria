@@ -141,7 +141,7 @@ treatment_filename <- Args[11]
 control_filename <- Args[12]
 output_dir <- Args[13]
 # 4. variable setting of test module--------------------------------------- TODO:
-# working_dir<-"/picb/evolgen2/users/gushanshan/projects/malaria/dataAndResult/histone_methy/3D7C8-H3K36me3-40h/BAM_broad_nomodel_dup1"
+# working_dir<-"/picb/evolgen2/users/gushanshan/projects/malaria/dataAndResult/histone_methy/WT-42-46h-H3K4me3/BAM_broad_nomodel_dup1"
 # chrom <- "Pf3D7_01_v3"
 # peak_pos_filename <- "chrom/Pf3D7_01_v3.peak.bed"
 # flank_length_type <- "relative"
