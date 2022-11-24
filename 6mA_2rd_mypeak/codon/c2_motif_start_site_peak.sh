@@ -21,7 +21,7 @@ get_motif_first_site_appear_in_codon() {
 }
 # VARIABLE NAMING TODO:
 export autosomes="Pf3D7_01_v3 Pf3D7_02_v3 Pf3D7_03_v3 Pf3D7_04_v3 Pf3D7_05_v3 Pf3D7_06_v3 Pf3D7_07_v3 Pf3D7_08_v3 Pf3D7_09_v3 Pf3D7_10_v3 Pf3D7_11_v3 Pf3D7_12_v3 Pf3D7_13_v3 Pf3D7_14_v3"
-motif_whole_genome_loc="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/chrom_wholeGenome/motif_GAWGAW_genome_peak_nopeak_loc"
+motif_whole_genome_loc="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/chrom_wholeGenome/motif_GAWGAW_genome_peak_nopeak_loc_twoOutgroupConsist"
 motif_start_site_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/motif_start_site"
 cds_each_site_codon_index="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/ref_genome/pf_3D7/anno/cds_each_site_codon_index.txt"
 

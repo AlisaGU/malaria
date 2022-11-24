@@ -65,6 +65,37 @@ plot_scatter <- function(data_for_plot = NULL) {
     return(p)
 }
 
+plot_scatter_nocolor <- function(data_for_plot = NULL) {
+    p <- ggplot(data_for_plot, aes(x = peak_proportion, y = mutation_density)) +
+        geom_point(size = 8, color = rgb(250, 217, 126, maxColorValue = 255), alpha = 0.5) +
+        # geom_point(size = 8) +
+        stat_smooth(method = "lm", col = "black", se = FALSE) +
+        stat_cor(method = "spearman", label.x.npc = 0.3, label.y.npc = 0.9, size = 12, color = "red") +
+        labs(x = "Proportion of peak\nin gene and flank 2kb", y = "Mutation density") +
+        theme_bw() +
+        theme(
+            strip.background = element_rect(fill = rgb(0, 72, 144, maxColorValue = 255)),
+            strip.text.x = element_text(size = 30, color = "white"),
+            panel.border = element_blank(),
+            panel.grid = element_blank(),
+            axis.line = element_line(colour = "black"),
+            # axis.text.x = element_text(size = 30, color = "black", angle = 45, hjust = 0.7, vjust = 0.7),
+            axis.text.x = element_text(size = 36, color = "black"),
+            axis.text.y = element_text(size = 36, color = "black"),
+            plot.title = element_text(
+                colour = "black",
+                size = 40, vjust = 0.5, hjust = 0.5
+            ),
+            axis.title.x = element_text(size = 40, color = "black"),
+            axis.title.y = element_text(size = 40, color = "black"),
+            legend.title = element_blank(),
+            legend.text = element_text(size = 24, color = "black"),
+            legend.position = "bottom",
+            plot.margin = margin(0.2, 0.3, 0.2, 0.2, "cm"),
+            panel.spacing = unit(3, "lines")
+        )
+    return(p)
+}
 # 3. input ---------------------------------------------------------------- TODO:
 mutation_density_global_dir <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/ESEA_WSEA_OCE_SAM_SAS/two_outgroup_consistent_in_core_and_noncore/gene_5_sets_exclude_pseudo_with_fold_enrichment_including_RIF"
 peak_proportion_global_dir <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/gene_groups/gene_5_sets_2022_07_12_exclude_pseudo"
@@ -88,6 +119,9 @@ noncore_p$labels$y <- ""
 core_p | noncore_p
 ggsave("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/ESEA_WSEA_OCE_SAM_SAS/two_outgroup_consistent_in_core_and_noncore/gene_5_sets_exclude_pseudo_with_fold_enrichment_including_RIF/correlation_between_peak_proportion_with_MD_flank.pdf", width = 16, height = 8)
 
+
+noncore_p_nocolor <- plot_scatter_nocolor(data_for_plot = data_noncore)
+ggsave("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/ESEA_WSEA_OCE_SAM_SAS/two_outgroup_consistent_in_core_and_noncore/gene_5_sets_exclude_pseudo_with_fold_enrichment_including_RIF/correlation_between_peak_proportion_with_MD_flank_var_rifin_stevor.pdf", width = 8, height = 8)
 # plot_scatter(data_for_plot = data %>% filter(gene_set == "VAR")) + scale_color_manual(values = c("VAR" = "#faca5d"))
 # ggsave("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/ESEA_WSEA_OCE_SAM_SAS/two_outgroup_consistent_in_core_and_noncore/gene_5_sets_exclude_pseudo_with_fold_enrichment_including_RIF/correlation_between_peak_proportion_with_MD_flank_VAR.pdf", width = 8, height = 8)
 

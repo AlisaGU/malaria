@@ -116,7 +116,7 @@ ggplot(data_for_plot, aes(x = class, y = MEAN, fill = class)) +
         "2nd Base" = rgb(177, 223, 229, maxColorValue = 255),
         "3rd Base" = rgb(250, 163, 27, maxColorValue = 255)
     )) +
-    labs(x = "", y = "Motif first base occurrence") +
+    labs(x = "The position of base in codon", y = "Motif first base occurrence") +
     theme_bw() +
     theme(
         strip.background = element_rect(fill = rgb(0, 72, 144, maxColorValue = 255)),

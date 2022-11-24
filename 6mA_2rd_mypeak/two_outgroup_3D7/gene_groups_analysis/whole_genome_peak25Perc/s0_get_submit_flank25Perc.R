@@ -1,0 +1,202 @@
+#!/home/gushanshan/anaconda3/envs/vscode_r/bin/Rscript
+# 1. packages and external scripts ---------------------------------------- TODO:
+suppressMessages(library(data.table))
+library(evobiR)
+# 2. functions ------------------------------------------------------------ TODO:
+get_treat_control_level_for_each_site <- function(treatment_level = NULL, control_level = NULL) {
+    treat.height.len <- treatment_level$ePos - treatment_level$sPos_minus_1
+    treat.height.value <- treatment_level$level
+    treat.height <- rep(treat.height.value, treat.height.len)
+    treat.height_genome_position <- unlist(Map(`:`, treatment_level$sPos_minus_1 + 1, treatment_level$ePos))
+
+    control.height.len <- control_level$ePos - control_level$sPos_minus_1
+    control.height.value <- control_level$level
+    control.height <- rep(control.height.value, control.height.len)
+    control.height_genome_position <- unlist(Map(`:`, control_level$sPos_minus_1 + 1, control_level$ePos))
+
+    result <- list(
+        treat = list(level = treat.height, pos = treat.height_genome_position),
+        control = list(level = control.height, pos = control.height_genome_position)
+    )
+}
+
+select_submit_sliding_window_position <- function(peak_start = NULL, peak_end = NULL,
+                                                  treatment_level_each_site = NULL, control_level_each_site = NULL,
+                                                  treatment_pos_each_site = NULL, control_pos_each_site = NULL,
+                                                  flank_length_type = NULL, flank_length = NULL) {
+    # peak_start and peak_end are both 1-based.
+    peak_treat_index <- which(treatment_pos_each_site >= peak_start & treatment_pos_each_site <= peak_end)
+    peak_treat <- treatment_level_each_site[peak_treat_index]
+    names(peak_treat) <- treatment_pos_each_site[peak_treat_index]
+
+    peak_control_index <- which(control_pos_each_site >= peak_start & control_pos_each_site <= peak_end)
+    peak_control <- control_level_each_site[peak_control_index]
+    names(peak_control) <- control_pos_each_site[peak_control_index]
+
+    flank_specific_length <- get_flank_specific_length(
+        peak_start = peak_start, peak_end = peak_end,
+        flank_length_type = flank_length_type, flank_length = flank_length
+    )
+    pos <- max(as.numeric(names(peak_control)[1]), as.numeric(names(peak_treat)[1]))
+    peak_treat <- peak_treat[which(names(peak_treat) == as.character(pos)):length(peak_treat)]
+    peak_control <- peak_control[which(names(peak_control) == as.character(pos)):length(peak_control)]
+
+    if (all(names(peak_treat) == names(peak_control))) {
+        peak_fold_enrichment <- peak_treat / peak_control
+        max_index <- which(peak_fold_enrichment == max(peak_fold_enrichment))
+        submit <- names(peak_fold_enrichment)[max_index]
+        sliding_window_genome_index <- lapply(submit, function(x) {
+            get_sliding_window(
+                index = as.numeric(x), region_start = peak_start,
+                region_end = peak_end, flank_specific_length = flank_specific_length
+            )
+        })
+        sliding_window_genome_index <- do.call(rbind, sliding_window_genome_index)
+        return(sliding_window_genome_index)
+    } else {
+        print("error")
+    }
+}
+
+get_flank_specific_length <- function(peak_start = NULL, peak_end = NULL,
+                                      flank_length_type = NULL, flank_length = NULL) {
+    flank_specific_length <- 0
+    if (flank_length_type == "absolute") {
+        flank_specific_length <- as.numeric(flank_length)
+    } else if (flank_length_type == "relative") {
+        peak_length <- peak_end - peak_start + 1
+        flank_specific_length <- ceiling(as.numeric(flank_length) * peak_length / 2)
+    }
+    return(flank_specific_length)
+}
+
+get_sliding_window <- function(index = NULL, region_start = NULL,
+                               region_end = NULL, flank_specific_length = NULL) {
+    left_seq_region <- rev(region_start:(index - 1))
+    right_seq_region <- index:region_end # 把submit划进右侧第一个窗口
+
+    left_sliding_window <- ""
+    if (length(left_seq_region) < flank_specific_length) {
+        left_sliding_window <- data.frame(left_index = region_start, right_index = index - 1, window = "w1")
+    } else {
+        left_sliding_window <- data.frame(
+            left_index = mySlidingWindow_min(data = left_seq_region, window = flank_specific_length, step = flank_specific_length),
+            right_index = mySlidingWindow_max(data = left_seq_region, window = flank_specific_length, step = flank_specific_length)
+        )
+        if (nrow(left_sliding_window) > 0) {
+            left_sliding_window$window <- paste0("w", 1:NROW(left_sliding_window))
+        }
+    }
+
+    right_sliding_window <- ""
+    if (length(right_seq_region) < flank_specific_length) {
+        right_sliding_window <- data.frame(left_index = index, right_index = region_end, window = "w1")
+    } else {
+        right_sliding_window <- data.frame(
+            left_index = mySlidingWindow_min(data = right_seq_region, window = flank_specific_length, step = flank_specific_length),
+            right_index = mySlidingWindow_max(data = right_seq_region, window = flank_specific_length, step = flank_specific_length)
+        )
+        if (nrow(right_sliding_window) > 0) {
+            right_sliding_window$window <- paste0("w", 1:NROW(right_sliding_window))
+        }
+    }
+
+    result <- data.frame(
+        left_index = c(left_sliding_window$left_index, right_sliding_window$left_index),
+        right_index = c(left_sliding_window$right_index, right_sliding_window$right_index),
+        window = c(left_sliding_window$window, right_sliding_window$window)
+    )
+    result <- result[order(result$window), ]
+    result <- result[result$window == "w1", ]
+    return(result)
+}
+
+mySlidingWindow_min <- function(data = NULL, window = NULL, step = NULL) {
+    if (length(data) <= window) {
+        return(NULL)
+    } else {
+        return(SlidingWindow("min", data, window, step))
+    }
+}
+
+mySlidingWindow_max <- function(data = NULL, window = NULL, step = NULL) {
+    if (length(data) <= window) {
+        return(NULL)
+    } else {
+        return(SlidingWindow("max", data, window, step))
+    }
+}
+
+get_collapsed_region_and_write <- function(peak_submit_sliding_window_pos = NULL, chrom = NULL, output_dir = NULL) {
+    data_by_window <- peak_submit_sliding_window_pos
+    a <- lapply(data_by_window, function(x) {
+        start <- x[, 1]
+        end <- x[, 2]
+        window <- x[1, 3]
+        a <- sort(unique(unlist(Map(`:`, start, end))))
+        rundiff <- c(1, diff(a))
+        difflist <- split(a, cumsum(rundiff != 1))
+        collapsed_region <- t(sapply(difflist, range))
+        collapsed_region[, 1] <- collapsed_region[, 1] - 1
+        result <- data.frame(chrom = chrom, start = collapsed_region[, 1], end = collapsed_region[, 2])
+        window <- x[1, 3]
+        result$peak_id <- x[1, 4]
+        return(result)
+    })
+    result <- do.call(rbind, a)
+    write.table(result, paste0(output_dir, "/w1.bed"), quote = F, col.names = F, row.names = F, sep = "\t")
+}
+# 3. input ---------------------------------------------------------------- TODO:
+Args <- commandArgs()
+chrom <- Args[6]
+peak_pos_filename <- Args[7]
+flank_length_type <- Args[8]
+flank_length <- Args[9]
+treatment_filename <- Args[10]
+control_filename <- Args[11]
+output_dir <- Args[12]
+# 4. variable setting of test module--------------------------------------- TODO:
+# chrom <- "Pf3D7_09_v3"
+# peak_pos_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/chrom_wholeGenome/Pf3D7_09_v3.peak.bed"
+# flank_length_type <- "relative"
+# flank_length <- "0.25"
+# treatment_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/modifi_level/Pf3D7_09_v3.treat.bed"
+# control_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/modifi_level/Pf3D7_09_v3.cont.bed"
+# output_dir <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/chrom_wholeGenome/sliding_window/relative.0.25/Pf3D7_09_v3"
+# 5. process -------------------------------------------------------------- TODO:
+peak_pos <- fread(peak_pos_filename, stringsAsFactors = F, sep = "\t")
+peak_pos$peak_id <- paste("peak", 1:nrow(peak_pos), sep = "")
+colnames(peak_pos) <- c("chrom", "sPos_minus_1", "ePos", "peak_id")
+treatment_level <- fread(treatment_filename, stringsAsFactors = F, sep = "\t")
+colnames(treatment_level) <- c("chrom", "sPos_minus_1", "ePos", "level")
+treatment_level <- treatment_level[treatment_level$ePos > treatment_level$sPos_minus_1, ]
+control_level <- fread(control_filename, stringsAsFactors = F, sep = "\t")
+colnames(control_level) <- c("chrom", "sPos_minus_1", "ePos", "level")
+
+treat_cont_level_for_each_site <- get_treat_control_level_for_each_site(
+    treatment_level = treatment_level,
+    control_level = control_level
+)
+treat_level_each_site <- treat_cont_level_for_each_site$treat$level
+treat_pos_each_site <- treat_cont_level_for_each_site$treat$pos
+control_level_each_site <- treat_cont_level_for_each_site$control$level
+control_pos_each_site <- treat_cont_level_for_each_site$control$pos
+
+peak_submit_sliding_window_pos <- apply(peak_pos, 1, function(x) {
+    x <- unlist(x)
+    peak_start <- as.numeric(x["sPos_minus_1"]) + 1
+    peak_end <- as.numeric(x["ePos"])
+    peak_id <- x["peak_id"]
+    submit_sliding_window_region <- select_submit_sliding_window_position(
+        peak_start = peak_start, peak_end = peak_end,
+        treatment_level_each_site = treat_level_each_site,
+        control_level_each_site = control_level_each_site,
+        treatment_pos_each_site = treat_pos_each_site,
+        control_pos_each_site = control_pos_each_site,
+        flank_length_type = flank_length_type, flank_length = flank_length
+    )
+    result <- data.frame(submit_sliding_window_region, peak_id = peak_id)
+    return(result)
+})
+
+get_collapsed_region_and_write(peak_submit_sliding_window_pos = peak_submit_sliding_window_pos, chrom = chrom, output_dir = output_dir)

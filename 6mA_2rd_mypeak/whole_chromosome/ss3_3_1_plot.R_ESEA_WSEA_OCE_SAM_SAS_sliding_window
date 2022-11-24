@@ -439,3 +439,12 @@ for (prefix in c("_correct_indel", "_nomatter_ancestor")) {
     plot_mutation_density(data_for_plot = data_for_plot_global)
     ggsave(paste0("all_snp_indel_sliding_window_mutation_density_facet", prefix, ".pdf"), width = 20, height = 10)
 }
+
+
+
+## 是否每个染色体都是w1区间的突变密度最高
+ggplot(data_for_plot_global %>% filter(variant == "SNPs"), aes(x = source, y = value)) +
+    geom_point() +
+    geom_line(aes(group = chrom, color = chrom)) +
+    facet_wrap(~chrom) +
+    labs(y = "Mutation density")

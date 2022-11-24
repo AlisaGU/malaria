@@ -1,0 +1,1 @@
+/picb/evolgen2/users/gushanshan/projects/malaria/code/6mA_2rd/two_outgroup_3D7/gene_groups_analysis/c14_construct_peak_proportion_correlation_with_mutation_density_flank.R

@@ -42,7 +42,8 @@ macs2_out_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA
 macs2_two_outgroup_consistent_dir=$macs2_out_dir/two_outgroup_consistent
 
 motif_each_dir=""
-if [ "$motif_seq" = "GAWGAW" ]; then
+# if [ "$motif_seq" = "GAWGAW" ]; then
+if [ "$motif" = "GAWGAW" ]; then
     motif_each_dir=${macs2_two_outgroup_consistent_dir}/single_motif_pattern/${motif}
 else
     motif_each_dir=${macs2_two_outgroup_consistent_dir}/single_motif_pattern/all_motifs/${motif}

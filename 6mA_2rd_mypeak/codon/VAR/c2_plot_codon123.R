@@ -14,6 +14,7 @@ read.data.bar <- function(filename = NULL, se = NULL) {
         "motif_3_6_in_codon3", "codon3_count"
     )
 
+    data <- data[-14, ]
     data <- data[, seq(1, ncol(data), by = 2)] / data[, seq(2, ncol(data), by = 2)]
     if (se == TRUE) {
         result <- t(apply(data, 2, function(x) {
@@ -35,19 +36,21 @@ setwd("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2
 
 ## 柱状图
 
-peak_data <- read.data.bar(filename = "peak_motif_3_6_in_codon123", se = FALSE)
-nopeak_data <- read.data.bar(filename = "nopeak_motif_3_6_in_codon123", se = FALSE)
+peak_data <- read.data.bar(filename = "peak_motif_3_6_in_codon123_var", se = FALSE)
+nopeak_data <- read.data.bar(filename = "nopeak_motif_3_6_in_codon123_var", se = FALSE)
 sapply(1:3, function(i) {
     t.test(peak_data[, i], nopeak_data[, i], paired = TRUE)$p.value
 })
 
 
 ratio <- peak_data / nopeak_data
-apply(ratio, 2, mean)
+apply(ratio, 2, function(x) {
+    mean(x, na.rm = TRUE)
+})
 ratio <- data.frame(
     value = unlist(ratio),
-    chrom = rep(paste("chrom", 1:14, sep = ""), 3),
-    source = rep(c("Codon1", "Codon2", "Codon3"), each = 14)
+    chrom = rep(paste("chrom", 1:13, sep = ""), 3), ## 第14号染色体上没有var基因（非假基因）
+    source = rep(c("Codon1", "Codon2", "Codon3"), each = 13)
 )
 ratio_p <- ggplot(ratio, aes(x = source, y = value, color = source)) +
     geom_boxplot(width = 0.5, size = 1, outlier.shape = NA) +
@@ -87,8 +90,8 @@ ratio_p <- ggplot(ratio, aes(x = source, y = value, color = source)) +
 
 
 
-data_for_plot_peak <- read.data.bar(filename = "peak_motif_3_6_in_codon123", se = TRUE)
-data_for_plot_nopeak <- read.data.bar(filename = "nopeak_motif_3_6_in_codon123", se = TRUE)
+data_for_plot_peak <- read.data.bar(filename = "peak_motif_3_6_in_codon123_var", se = TRUE)
+data_for_plot_nopeak <- read.data.bar(filename = "nopeak_motif_3_6_in_codon123_var", se = TRUE)
 data_for_plot <- rbind(cbind(data_for_plot_peak, source = "6mA"), cbind(data_for_plot_nopeak, source = "Control"))
 data_for_plot$source <- factor(data_for_plot$source, levels = c("6mA", "Control"))
 
@@ -99,10 +102,10 @@ bar_p <- ggplot(data = data_for_plot, aes(x = class, y = MEAN, fill = source)) +
         position = position_dodge(.9)
     ) +
     geom_signif(
-        annotations = c("3.6e-03", "1.4e-06", "7.1e-10"), y_position = c(0.007, 0.01, 0.07), xmin = c(0.75, 1.75, 2.75), xmax = c(1.25, 2.25, 3.25),
+        annotations = c("0.31", "0.017", "0.12"), y_position = c(0.007, 0.01, 0.035), xmin = c(0.75, 1.75, 2.75), xmax = c(1.25, 2.25, 3.25),
         tip_length = c(c(0.01, 0.01), c(0.01, 0.01), c(0.01, 0.01)), vjust = -0.5, size = 1, textsize = 14
     ) +
-    scale_y_continuous(limits = c(0, 0.081)) +
+    scale_y_continuous(limits = c(0, 0.04)) +
     scale_x_discrete(labels = c("First base", "Second base", "Third base")) +
     scale_fill_manual(values = c(
         "6mA" = rgb(236, 174, 34, maxColorValue = 255),
@@ -133,7 +136,7 @@ bar_p <- ggplot(data = data_for_plot, aes(x = class, y = MEAN, fill = source)) +
         panel.spacing = unit(3, "lines")
     )
 
-pdf("peak_nopeak_3_6_codon123.pdf", width = 18, height = 10)
+pdf("peak_nopeak_3_6_codon123_var.pdf", width = 18, height = 10)
 bar_p | ratio_p
 grid::grid.draw(grid::textGrob("The position of base in codon", x = 0.6, y = 0.04, gp = grid::gpar(fontsize = 40, col = "black")))
 dev.off()

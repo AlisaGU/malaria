@@ -152,3 +152,8 @@ data <- get_data_for_plot(dataname = "GAWGAW_count_sliding_window")
 
 plot_motif_count(data_for_plot = data)
 ggsave("motif_count_sliding_window.pdf", height = 10, width = 10)
+
+
+data <- read.table("GAWGAW_count_sliding_window", header = F, as.is = T)
+data <- cbind(data[, 1], apply(data[, -1], 1, mean))
+t.test(data[, 1], data[, 2], paired = TRUE)

@@ -14,10 +14,10 @@ library(gridExtra)
 
 # 2. functions ------------------------------------------------------------ TODO:
 read_peakbase_motif_and_flank_scale_by_propor_mutation <- function(flank_length = NULL, motif = NULL, variants = NULL) {
-    # read scale_data
-    setwd("../peak_base_mutation_density")
+    ## read scale_data 碱基在全基因组常染色体区域的平均突变速率
+    setwd("../wholeGenome_Euchromatin_twoOutgroup_base_mutation_density")
     scale_data <- read_scale_data()
-    # read propor_factor
+    ## read propor_factor 对应位置上，碱基的比例
     ori_path <- getwd()
     if (motif == "GAWGAW") {
         setwd(paste0("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/two_outgroup_consistent/single_motif_pattern_GAWGAW_asWhole/", motif))
@@ -28,13 +28,13 @@ read_peakbase_motif_and_flank_scale_by_propor_mutation <- function(flank_length 
     setwd(ori_path)
     # scale_factor <- get_scale_factor_by_propor(propor_data = propor_data, scale_data = scale_data)
 
-    # read motif inside
+    ## read motif inside
     setwd(paste0("../", motif))
     data_for_plot <- lapply(paste("site", 1:6, sep = ""), function(x) {
         read_each_site_motif_scale_by_propor(site = x, scale_data = scale_data, propor_data = propor_data)
     })
 
-    # read motif flank region
+    ## read motif flank region
     setwd("./flank_nomatter_strand.remove_close_overlap")
     for (x in paste("flank_", 1:flank_length, sep = "")) {
         data_for_plot[[length(data_for_plot) + 1]] <- read_each_site_flank_scale_by_propor(flank = x, scale_data = scale_data, propor_data = propor_data)
@@ -63,7 +63,8 @@ read_scale_data <- function() {
         region_len_column <- seq(2, ncol(a), by = 2)
         var_count <- as.matrix(a[, var_count_column])
         region_len <- as.matrix(a[, region_len_column])
-        data <- data.frame(apply(var_count, 1, sum) / apply(region_len, 1, sum))
+        # data <- data.frame(apply(var_count, 1, sum) / apply(region_len, 1, sum))
+        data <- data.frame(rep(sum(apply(var_count, 1, sum)) / sum(apply(region_len, 1, sum)), 14))
         rownames(data) <- paste("chrom", 1:14, sep = "")
         colnames(data) <- "scale_factor"
         return(data)
@@ -87,9 +88,9 @@ read_propor <- function() {
         propor <- read.table(paste0("flank_nomatter_strand.remove_close_overlap/flank_", flank, "/flank", flank, ".peak.base_count"), header = F, as.is = T)
         colnames(propor) <- c("A", "T", "C", "G", "all")
         rownames(propor) <- paste("chrom", 1:14, sep = "")
-        result[[paste0("flank_", flank)]] <- apply(propor[, 1:4], 2, function(x) {
-            x / propor[, 5]
-        })
+        result[[paste0("flank_", flank)]] <- t(apply(propor[, 3:4], 1, function(x) {
+            x / sum(x)
+        }))
     }
 
     return(result)
@@ -176,14 +177,7 @@ read_each_site_flank_scale_by_propor <- function(flank = NULL, scale_data = NULL
         rownames(b) <- paste("chrom", 1:14, sep = "")
 
         data <- ""
-        if (all(b[, 2] == 0)) {
-            data <- b[, 3] / b[, 4] * (propor_data[[flank]][, 3] + propor_data[[flank]][, 4]) / unlist(scale_data[["C_snps"]])
-        } else if (all(b[, 4] == 0)) {
-            data <- b[, 1] / b[, 2] * (propor_data[[flank]][, 1] + propor_data[[flank]][, 2]) / unlist(scale_data[["A_snps"]])
-        } else {
-            data <- b[, 1] / b[, 2] * (propor_data[[flank]][, 1] + propor_data[[flank]][, 2]) / unlist(scale_data[["A_snps"]]) +
-                b[, 3] / b[, 4] * (propor_data[[flank]][, 3] + propor_data[[flank]][, 4]) / unlist(scale_data[["C_snps"]])
-        }
+        data <- b[, 3] / b[, 4] * (propor_data[[flank]][, "C"] + propor_data[[flank]][, "G"]) / unlist(scale_data[["C_snps"]])
         rownames(data) <- rownames(b)
         colnames(data) <- c("peak_motif_flank")
 
@@ -251,30 +245,31 @@ plot_motif_scale_by_propor <- function(data_for_plot = NULL, motif = NULL, title
     return(p)
 }
 
+
 compute_significance <- function(data = NULL) {
     data_split <- split(data, f = data$site)
     lapply(data_split, function(x) {
         value <- x$value
-        mu <- mean(value)
-        value1 <- value - mu + 1
-        distri <- sapply(1:10000, function(seed) {
+
+        distri <- sapply(1:100000, function(seed) {
             set.seed(seed)
-            sample_value <- sample(value1, 14, replace = TRUE)
+            sample_value <- sample(value, 14, replace = TRUE)
             statisitic <- mean(sample_value)
             return(statisitic)
         })
         hist(distri)
-        which(distri > mu)
-
-        pnorm(1, mean = mean(value), sd = sqrt(var(value)))
-        pwilcox()
+        distri_sort <- sort(distri, decreasing = FALSE)
+        lowCI <- distri_sort[10000 * 0.05]
+        highCI <- distri_sort[10000 * 0.95]
+        meanValue <- mean(distri_sort)
+        return(c(lowCI, highCI, meanValue))
     })
 }
 # 3. input ---------------------------------------------------------------- TODO:
 popu_symbol <- "ESEA_WSEA_OCE_SAM_SAS"
 global_dir <- paste0(
     "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/1_2rd_initial_evaluation/",
-    popu_symbol, "/motif/mutation_dentisy_two_outgroup_consistent/each_site"
+    popu_symbol, "/motif/mutation_dentisy_two_outgroup_consistent/each_site_GAWGAW_asWhole_LI_formula"
 )
 
 # 4. variable setting of test module--------------------------------------- TODO:
@@ -284,11 +279,11 @@ global_dir <- paste0(
 variants <- c("G", "A")
 titles <- c(
     "G,A,A/C,G/C,A,A", "G,A,A/T/C,G,A,A/T", "G,A,A,C,A,A",
-    "G,A,A,G,A,A", "G,A,T,G,A,A", "G,A,T,G,A,T", "G,A,A/T,G,A,A/T", "G,A,A,G,A,T"
+    "G,A,A,G,A,A", "G,A,T,G,A,A", "G,A,T,G,A,T", "G,A,A/T,G,A,A/T"
 )
 names(titles) <- c(
     "GAMSAA", "GAHGAW", "GAACAA",
-    "GAAGAA", "GATGAA", "GATGAT", "GAWGAW", "GAAGAT"
+    "GAAGAA", "GATGAA", "GATGAT", "GAWGAW"
 )
 
 setwd(global_dir)
@@ -297,7 +292,7 @@ ps <- list()
 
 pdf(file = "scaled_by_propor_peakbase_motif_and_flank_global_variants.remove_close_overlap_all_snp_submotif.pdf", height = 8, width = 16)
 # for (motif in c("GAMSAA", "GAHGAW", "GAACAA", "GAAGAA", "GATGAA", "GATGAT")) {
-for (motif in c("GAAGAA", "GAAGAT", "GATGAA", "GATGAT")) {
+for (motif in c("GAAGAA", "GATGAA", "GATGAT")) {
     path <- paste0(global_dir, "/../each_site_all_motifs_asWhole_LI_formula/", motif)
     setwd(path)
     data_for_plot <- read_peakbase_motif_and_flank_scale_by_propor_mutation(flank_length = 10, motif = motif, variants = variants)
@@ -307,20 +302,6 @@ for (motif in c("GAAGAA", "GAAGAT", "GATGAA", "GATGAT")) {
     print(p)
 }
 dev.off()
-
-
-pdf(file = "scaled_by_propor_peakbase_motif_and_flank_global_variants.remove_close_overlap_all_snp_submotif_GAAGAT.pdf", height = 8, width = 16)
-for (motif in c("GAAGAT")) {
-    path <- paste0(global_dir, "/../each_site_all_motifs_asWhole_LI_formula/", motif)
-    setwd(path)
-    data_for_plot <- read_peakbase_motif_and_flank_scale_by_propor_mutation(flank_length = 10, motif = motif, variants = variants)
-    # p <- plot_motif_scale_by_propor(data_for_plot = data_for_plot, motif = motif, title = as.character(titles[motif]))
-    p <- plot_motif_scale_by_propor(data_for_plot = data_for_plot %>% filter(variant == "SNPs"), motif = motif, title = "")
-    ps[[motif]] <- p
-    print(p)
-}
-dev.off()
-
 
 pdf(file = "scaled_by_propor_peakbase_motif_and_flank_global_variants.remove_close_overlap_all_snp.pdf", height = 8, width = 16)
 for (motif in c("GAWGAW")) {
@@ -333,18 +314,3 @@ for (motif in c("GAWGAW")) {
     print(p)
 }
 dev.off()
-
-
-## site3 p value
-data <- data_for_plot %>% filter(variant == "SNPs")
-site2 <- data %>% filter(site == "site2")
-site3 <- data %>% filter(site == "site3")
-site4 <- data %>% filter(site == "site4")
-
-site5 <- data %>% filter(site == "site5")
-site6 <- data %>% filter(site == "site6")
-flank1 <- data %>% filter(site == "flank_1")
-
-t.test(site3$value, (site2$value + site4$value) / 2, alternative = "greater", paired = TRUE)
-
-t.test(site6$value, (site5$value + flank1$value) / 2, alternative = "greater", paired = TRUE)
