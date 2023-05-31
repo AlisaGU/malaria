@@ -7,9 +7,9 @@
 # FUNCTIONS TODO:
 
 # VARIABLE NAMING TODO:
-prefix="HDR"
-code_dir="/picb/evolgen2/users/gushanshan/projects/malaria/code/xiao_plot/RNA_T_DNA_and_rhoptry"
-working_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/RNA_T_DNA_and_rhoptry"
+prefix="DNA_repair"
+code_dir="/picb/evolgen2/users/gushanshan/projects/malaria/code/xiao_plot/gene_6mA_density_signal/DNA_repair"
+working_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/DNA_repairlist"
 genes="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/all_genes_bed"
 TSS2kb="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/genome_different_parts_motif_distri/genome_parts/TSS_2KB.bed"
 TTS2kb="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/genome_different_parts_motif_distri/genome_parts/TTS_2KB.bed"

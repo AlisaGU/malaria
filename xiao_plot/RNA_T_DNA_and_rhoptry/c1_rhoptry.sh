@@ -24,7 +24,7 @@ samtools="/picb/evolgen/users/gushanshan/GenomeAnnotation/samtools/samtools-1.10
 
 # PROCESS TODO:
 cd $working_dir
-grep -f ${prefix}_list $genes | $bedtools makewindows -b stdin -n 100 -i srcwinnum >$prefix.gene.window
+grep -f ${prefix}_list $genes | $bedtools makewindows -b stdin -n 300 -i srcwinnum >$prefix.gene.window
 grep -f ${prefix}_list $TSS2kb | $bedtools makewindows -b stdin -n 100 -i srcwinnum >$prefix.tss.window
 grep -f ${prefix}_list $TTS2kb | $bedtools makewindows -b stdin -n 100 -i srcwinnum >$prefix.tts.window
 

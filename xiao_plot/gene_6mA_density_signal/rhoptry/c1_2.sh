@@ -7,16 +7,15 @@
 # FUNCTIONS TODO:
 
 # VARIABLE NAMING TODO:
-prefix="HDR"
-code_dir="/picb/evolgen2/users/gushanshan/projects/malaria/code/xiao_plot/RNA_T_DNA_and_rhoptry"
-working_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/RNA_T_DNA_and_rhoptry"
+prefix="rhoptry"
+working_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/OE/rhoptry_2"
 genes="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/all_genes_bed"
 TSS2kb="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/genome_different_parts_motif_distri/genome_parts/TSS_2KB.bed"
 TTS2kb="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/genome_different_parts_motif_distri/genome_parts/TTS_2KB.bed"
-WT_chip="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/3D7-T3_ChIP.bam"
-WT_input="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/3D7-T3_Input.bam"
-KD_chip="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/KD/6mAKD-T3_ChIP.bam"
-KD_input="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/KD/6mAKD-T3_Input.bam"
+WT_chip=$working_dir/../"3D7-T2_ChIP.bam"
+WT_input=$working_dir/../"3D7-T2_Input.bam"
+OE_chip=$working_dir/../"NamtOE-T2_ChIP.bam"
+OE_input=$working_dir/../"NamtOE-T2_Input.bam"
 
 bedtools="/picb/evolgen/users/gushanshan/software/bedtools/bedtools"
 samtools="/picb/evolgen/users/gushanshan/GenomeAnnotation/samtools/samtools-1.10/samtools_install/bin/samtools"
@@ -30,15 +29,15 @@ grep -f ${prefix}_list $TTS2kb | $bedtools makewindows -b stdin -n 100 -i srcwin
 
 $samtools depth -a -b $prefix.gene.window $WT_chip | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.gene.window -wb -b stdin >$prefix.gene.window.wt.chip
 $samtools depth -a -b $prefix.gene.window $WT_input | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.gene.window -wb -b stdin >$prefix.gene.window.wt.input
-$samtools depth -a -b $prefix.gene.window $KD_chip | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.gene.window -wb -b stdin >$prefix.gene.window.kd.chip
-$samtools depth -a -b $prefix.gene.window $KD_input | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.gene.window -wb -b stdin >$prefix.gene.window.kd.input
+$samtools depth -a -b $prefix.gene.window $OE_chip | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.gene.window -wb -b stdin >$prefix.gene.window.OE.chip
+$samtools depth -a -b $prefix.gene.window $OE_input | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.gene.window -wb -b stdin >$prefix.gene.window.OE.input
 
 $samtools depth -a -b $prefix.tss.window $WT_chip | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tss.window -wb -b stdin >$prefix.tss.window.wt.chip
 $samtools depth -a -b $prefix.tss.window $WT_input | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tss.window -wb -b stdin >$prefix.tss.window.wt.input
-$samtools depth -a -b $prefix.tss.window $KD_chip | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tss.window -wb -b stdin >$prefix.tss.window.kd.chip
-$samtools depth -a -b $prefix.tss.window $KD_input | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tss.window -wb -b stdin >$prefix.tss.window.kd.input
+$samtools depth -a -b $prefix.tss.window $OE_chip | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tss.window -wb -b stdin >$prefix.tss.window.OE.chip
+$samtools depth -a -b $prefix.tss.window $OE_input | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tss.window -wb -b stdin >$prefix.tss.window.OE.input
 
 $samtools depth -a -b $prefix.tts.window $WT_chip | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tts.window -wb -b stdin >$prefix.tts.window.wt.chip
 $samtools depth -a -b $prefix.tts.window $WT_input | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tts.window -wb -b stdin >$prefix.tts.window.wt.input
-$samtools depth -a -b $prefix.tts.window $KD_chip | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tts.window -wb -b stdin >$prefix.tts.window.kd.chip
-$samtools depth -a -b $prefix.tts.window $KD_input | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tts.window -wb -b stdin >$prefix.tts.window.kd.input
+$samtools depth -a -b $prefix.tts.window $OE_chip | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tts.window -wb -b stdin >$prefix.tts.window.OE.chip
+$samtools depth -a -b $prefix.tts.window $OE_input | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.tts.window -wb -b stdin >$prefix.tts.window.OE.input

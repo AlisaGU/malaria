@@ -20,6 +20,7 @@ samtools="/picb/evolgen/users/gushanshan/GenomeAnnotation/samtools/samtools-1.10
 # VARIABLE NAMING for test module TODO:
 
 # PROCESS TODO:
+##酶
 cd $enzyme_dir
 # $samtools index CT300-Flag_ChIP.bam
 # $samtools index CT300-2_Input.bam
@@ -27,6 +28,7 @@ $bamCompare -b1 CT300-Flag_ChIP.bam -b2 CT300-2_Input.bam -o enzyme_log2ratio_bi
 # awk '{print $1"\t"$2"\t"$3}' enzyme_log2ratio_bin${binsize}.bdg | md5sum
 sed -e "s/Pf3D7_01_v3/pf1/g" -e "s/Pf3D7_02_v3/pf2/g" -e "s/Pf3D7_03_v3/pf3/g" -e "s/Pf3D7_04_v3/pf4/g" -e "s/Pf3D7_05_v3/pf5/g" -e "s/Pf3D7_06_v3/pf6/g" -e "s/Pf3D7_07_v3/pf7/g" -e "s/Pf3D7_08_v3/pf8/g" -e "s/Pf3D7_09_v3/pf9/g" -e "s/Pf3D7_10_v3/pf10/g" -e "s/Pf3D7_11_v3/pf11/g" -e "s/Pf3D7_12_v3/pf12/g" -e "s/Pf3D7_13_v3/pf13/g" -e "s/Pf3D7_14_v3/pf14/g" -e "s/Pf_M76611/pf15/g" -e "s/Pf3D7_API_v3/pf16/g" enzyme_log2ratio_bin${binsize}.bdg | awk '$4>0{print $0}' | awk '{if($4>1){print $1"\t"$2"\t"$3"\t"1}else{print $0}}' >enzyme_log2ratio_bin${binsize}_max1_min0.bed
 
+##WT
 cd $WT_dir
 # $samtools index 3D7-T3_ChIP.bam
 # $samtools index 3D7-T3_Input.bam
@@ -34,18 +36,19 @@ cd $WT_dir
 
 # awk '{print $1"\t"$2"\t"$3}' WT_log2ratio_bin${binsize}.bdg | md5sum
 
+## KD
 cd $KD_dir
 # $samtools index 6mAKD-T3_ChIP.bam
 # $samtools index 6mAKD-T3_Input.bam
-# $bamCompare -b1 6mAKD-T3_ChIP.bam -b2 6mAKD-T3_Input.bam -o KD_log2ratio_bin${binsize}.bdg --outFileFormat=bedgraph --binSize=$binsize --numberOfProcessors 10
-$bamCompare -b1 6mAKD-T3_ChIP.bam -b2 6mAKD-T3_Input.bam -o KD_ratio_bin${binsize}.bdg --outFileFormat=bedgraph --binSize=$binsize --numberOfProcessors 10 --Operation=="ratio"
+$bamCompare -b1 6mAKD-T3_ChIP.bam -b2 6mAKD-T3_Input.bam -o KD_log2ratio_bin${binsize}.bdg --outFileFormat=bedgraph --binSize=$binsize --numberOfProcessors 10
 
 # awk '{print $1"\t"$2"\t"$3}' KD_log2ratio_bin${binsize}.bdg | md5sum
 
+## motif
 # cd $GAAGAA_dir
 # awk '{print $1"\t"$2"\t"$3}' $KD_dir/KD_log2ratio_bin${binsize}.bdg | $bedtools intersect -a stdin -b GAAGAA.bed -c >GAAGAA_bin${binsize}_count.bdg
 sed -e "s/Pf3D7_01_v3/pf1/g" -e "s/Pf3D7_02_v3/pf2/g" -e "s/Pf3D7_03_v3/pf3/g" -e "s/Pf3D7_04_v3/pf4/g" -e "s/Pf3D7_05_v3/pf5/g" -e "s/Pf3D7_06_v3/pf6/g" -e "s/Pf3D7_07_v3/pf7/g" -e "s/Pf3D7_08_v3/pf8/g" -e "s/Pf3D7_09_v3/pf9/g" -e "s/Pf3D7_10_v3/pf10/g" -e "s/Pf3D7_11_v3/pf11/g" -e "s/Pf3D7_12_v3/pf12/g" -e "s/Pf3D7_13_v3/pf13/g" -e "s/Pf3D7_14_v3/pf14/g" -e "s/Pf_M76611/pf15/g" -e "s/Pf3D7_API_v3/pf16/g" GAAGAA_bin${binsize}_count.bdg | awk '{if($4>100){print $1"\t"$2"\t"$3"\t"100}else{print $0}}' >GAAGAA_bin${binsize}_count_max100.bed
-
+## mutation
 cd $mutation_dir
 cat *bed | sort -k1,1 -k2n >all_chroms.bed
 awk '{print $1"\t"$2"\t"$3}' $KD_dir/KD_log2ratio_bin${binsize}.bdg | $bedtools intersect -a stdin -b all_chroms.bed -wa -wb >all_chrom_bin${binsize}_tmp.bed
@@ -53,3 +56,8 @@ awk '{print $1"\t"$2"\t"$3}' $KD_dir/KD_log2ratio_bin${binsize}.bdg | $bedtools 
 rm -rf all_chrom_bin${binsize}_tmp.bed all_chroms.bed
 sed -e "s/Pf3D7_01_v3/pf1/g" -e "s/Pf3D7_02_v3/pf2/g" -e "s/Pf3D7_03_v3/pf3/g" -e "s/Pf3D7_04_v3/pf4/g" -e "s/Pf3D7_05_v3/pf5/g" -e "s/Pf3D7_06_v3/pf6/g" -e "s/Pf3D7_07_v3/pf7/g" -e "s/Pf3D7_08_v3/pf8/g" -e "s/Pf3D7_09_v3/pf9/g" -e "s/Pf3D7_10_v3/pf10/g" -e "s/Pf3D7_11_v3/pf11/g" -e "s/Pf3D7_12_v3/pf12/g" -e "s/Pf3D7_13_v3/pf13/g" -e "s/Pf3D7_14_v3/pf14/g" -e "s/Pf_M76611/pf15/g" -e "s/Pf3D7_API_v3/pf16/g" all_chrom_bin${binsize}_indel.bed | awk '{if($4>600){print $1"\t"$2"\t"$3"\t"600}else{print $0}}' >all_chrom_bin${binsize}_indel_pf_max600.bed
 sed -e "s/Pf3D7_01_v3/pf1/g" -e "s/Pf3D7_02_v3/pf2/g" -e "s/Pf3D7_03_v3/pf3/g" -e "s/Pf3D7_04_v3/pf4/g" -e "s/Pf3D7_05_v3/pf5/g" -e "s/Pf3D7_06_v3/pf6/g" -e "s/Pf3D7_07_v3/pf7/g" -e "s/Pf3D7_08_v3/pf8/g" -e "s/Pf3D7_09_v3/pf9/g" -e "s/Pf3D7_10_v3/pf10/g" -e "s/Pf3D7_11_v3/pf11/g" -e "s/Pf3D7_12_v3/pf12/g" -e "s/Pf3D7_13_v3/pf13/g" -e "s/Pf3D7_14_v3/pf14/g" -e "s/Pf_M76611/pf15/g" -e "s/Pf3D7_API_v3/pf16/g" all_chrom_bin${binsize}_snp.bed | awk '{if($4>400){print $1"\t"$2"\t"$3"\t"400}else{print $0}}' >all_chrom_bin${binsize}_snp_pf_max400.bed
+
+##wyh wt kd
+cd /picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/circos/wyh
+paste 3D7-T3.bed 6mAKD-T3.bed | awk '{print $1"\t"$2"\t"$3"\t"$4-$8}' >WT_plus_KD_T3_bin5000.bed
+awk '$4>0{print $0}' WT_plus_KD_T3_bin5000.bed | awk '{if($4>1){print $1"\t"$2"\t"$3"\t"1}else{print $0}}' >WT_plus_KD_T3_bin5000_gt0_lt1.bed

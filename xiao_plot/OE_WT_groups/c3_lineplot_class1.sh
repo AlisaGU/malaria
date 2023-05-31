@@ -7,16 +7,17 @@
 # FUNCTIONS TODO:
 
 # VARIABLE NAMING TODO:
-prefix="HDR"
-code_dir="/picb/evolgen2/users/gushanshan/projects/malaria/code/xiao_plot/RNA_T_DNA_and_rhoptry"
-working_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/RNA_T_DNA_and_rhoptry"
+prefix="class1"
+working_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/OE_WT_groups/$prefix"
+
+bam_dir="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/OE"
 genes="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/all_genes_bed"
 TSS2kb="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/genome_different_parts_motif_distri/genome_parts/TSS_2KB.bed"
 TTS2kb="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/macs2_output/genome_different_parts_motif_distri/genome_parts/TTS_2KB.bed"
-WT_chip="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/3D7-T3_ChIP.bam"
-WT_input="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/6mA/jiang/2rd/3D7-T3_Input.bam"
-KD_chip="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/KD/6mAKD-T3_ChIP.bam"
-KD_input="/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/KD/6mAKD-T3_Input.bam"
+WT_chip=$bam_dir/3D7-T_ChIP.bam
+WT_input=$bam_dir/3D7-T_Input.bam
+KD_chip=$bam_dir/NAMTOE-T_ChIP.bam
+KD_input=$bam_dir/NAMTOE-T_Input.bam
 
 bedtools="/picb/evolgen/users/gushanshan/software/bedtools/bedtools"
 samtools="/picb/evolgen/users/gushanshan/GenomeAnnotation/samtools/samtools-1.10/samtools_install/bin/samtools"
@@ -24,9 +25,10 @@ samtools="/picb/evolgen/users/gushanshan/GenomeAnnotation/samtools/samtools-1.10
 
 # PROCESS TODO:
 cd $working_dir
-grep -f ${prefix}_list $genes | $bedtools makewindows -b stdin -n 300 -i srcwinnum >$prefix.gene.window
-grep -f ${prefix}_list $TSS2kb | $bedtools makewindows -b stdin -n 100 -i srcwinnum >$prefix.tss.window
-grep -f ${prefix}_list $TTS2kb | $bedtools makewindows -b stdin -n 100 -i srcwinnum >$prefix.tts.window
+
+grep -f ${prefix}.geneList.txt $genes | $bedtools makewindows -b stdin -n 300 -i srcwinnum >$prefix.gene.window
+grep -f ${prefix}.geneList.txt $TSS2kb | $bedtools makewindows -b stdin -n 100 -i srcwinnum >$prefix.tss.window
+grep -f ${prefix}.geneList.txt $TTS2kb | $bedtools makewindows -b stdin -n 100 -i srcwinnum >$prefix.tts.window
 
 $samtools depth -a -b $prefix.gene.window $WT_chip | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.gene.window -wb -b stdin >$prefix.gene.window.wt.chip
 $samtools depth -a -b $prefix.gene.window $WT_input | awk '{print $1"\t"$2-1"\t"$2"\t"$3}' | $bedtools intersect -wa -a $prefix.gene.window -wb -b stdin >$prefix.gene.window.wt.input

@@ -383,7 +383,9 @@ tss_density_signal_data <- get_6mA(
     chip_depth = chip_depth, input_depth = input_depth
 )
 colnames(tss_density_signal_data)[2] <- "tss_density_signal"
-
+# write.table(tss_density_signal_data, "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/tss.WT.6mAdensity.txt",
+#     sep = "\t", row.names = F, col.names = F,quote=F
+# )
 gene_smrtpro <- get_smrt_gene(smrt_data = gene_smrt)
 colnames(gene_smrtpro)[2] <- "gene_smrt_pro"
 
