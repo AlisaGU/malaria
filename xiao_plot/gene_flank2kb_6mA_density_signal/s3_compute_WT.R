@@ -7,6 +7,7 @@ library(ggridges)
 library(ggsignif)
 library(ggpubr)
 library(patchwork)
+library(ggridges)
 # 2. functions ------------------------------------------------------------ TODO:
 get_6mA <- function(chip_info = NULL, input_info = NULL, chip_depth = NULL, input_depth = NULL) {
     chip_read_count <- chip_info %>%
@@ -372,6 +373,12 @@ up <- subsample_bam_gene_density(expression_type = "Up", data = data, color = rg
 down <- subsample_bam_gene_density(expression_type = "Down", data = data, color = rgb(0, 0, 252, maxColorValue = 255))
 up | down
 ggsave("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/up_down_gene+-2kb_density_distri.pdf", width = 14, height = 5)
+## 所有基因 6mA density 和基因表达的关系
+ggplot(data %>% filter(!is.infinite(gene_flank2kb_density_signal) & !is.na(gene_flank2kb_density_signal)), aes(x = gene_flank2kb_density_signal, y = AV)) +
+    geom_point() +
+    # scale_y_continuous(trans = "log10") +
+    stat_smooth(aes(group = 1), method = "lm", col = "black", se = FALSE, show.legend = F) +
+    stat_cor(aes(group = 1), method = "spearman", label.x.npc = 0.05, label.y.npc = 0.9, size = 12)
 ## 根据6mA density将基因分组
 data1 <- group_gene_by_coluname(
     data = data %>% filter(!is.infinite(gene_flank2kb_density_signal) & !is.na(gene_flank2kb_density_signal)),
@@ -394,20 +401,39 @@ write.table(
 # colnames(data1) <- c("gene", "6mA density in gene and +-2kb", "Average of TPM", "RNA expression type", "class of 6mA density")
 # write.table(data1, "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/Tstage_gene_group_by_6mA_density.txt", sep = "\t", quote = F, row.names = F, col.names = T)
 # wilcox.test(data1$AV[data1$gene_flank2kb_density_signal_type == "1"], data1$AV[data1$gene_flank2kb_density_signal_type == "2"], alternative = "greater")
+ggplot(data1, aes(y = gene_flank2kb_density_signal_type, x = AV, fill = gene_flank2kb_density_signal_type)) +
+    # stat_density_ridges(quantile_lines = TRUE, quantiles = 2)+
+    # geom_density_ridges(alpha=0.5)+
+
+    #     theme_ridges()+
+    stat_density_ridges(quantile_lines = TRUE, quantiles = 2, alpha = 0.5) +
+    geom_text(
+        data = data1 %>% group_by(gene_flank2kb_density_signal_type) %>%
+            summarise(AV = median(AV)),
+        aes(label = sprintf("%1.1f", AV)),
+        position = position_nudge(y = -0.1, x = 20), colour = "black", size = 3.5
+    ) +
+    coord_cartesian(xlim = c(0, 500)) +
+    scale_fill_manual(values = c("1" = "#8c2d04", "2" = "#cc4c02", "3" = "#ec7014", "4" = "#fe9929", "5" = "#fec44f"))
+
+
 
 ggplot(data1, aes(x = gene_flank2kb_density_signal_type, y = AV, fill = gene_flank2kb_density_signal_type)) +
-    geom_boxplot(position = position_dodge(), width = 0.5, outlier.shape = NA, size = 1) +
-    # geom_violin() +
+    scale_y_log10() +
+
+    # geom_boxplot(position = position_dodge(), width = 0.5, outlier.shape = NA, size = 1) +
+    # geom_point(position = position_jitter(w = 0.2, h = 0), alpha = 0.1) +
+    geom_violin() +
     # stat_summary(
-    #     fun = "median",
+    #     fun = "mean",
     #     geom = "crossbar",
     #     width = 0.5,
     #     colour = "black"
     # ) +
-    coord_cartesian(ylim = c(0, 250)) +
     scale_fill_manual(values = c("1" = "#8c2d04", "2" = "#cc4c02", "3" = "#ec7014", "4" = "#fe9929", "5" = "#fec44f", "6" = "#fee391")) +
-    labs(x = "Average 6mA density in gene+-2kb\n(chip/input)", y = "RNA expression (TPM)") +
-    scale_x_discrete(labels = c("Low", "High"), breaks = c(3, 1)) +
+    labs(x = "Average 6mA density in gene+-2kb\n(chip/input)", y = "log10 RNA expression (TPM)") +
+    # scale_x_discrete(labels = c("Low", "High"), breaks = c(3, 1)) +
+    coord_cartesian(ylim = c(1, 500)) +
     theme_bw() +
     theme(
         panel.grid.major = element_blank(),
@@ -480,4 +506,4 @@ ggplot(summary_info, aes(x = gene_flank2kb_density_signal_type, y = data, color 
 
 # ggsave("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/gene_bam_RNA_expression_Tstage_trendline_tpm.pdf", width = 8, height = 8)
 # ggsave("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/gene_bam_RNA_expression_Rstage_trendline_tpm.pdf", width = 8, height = 8)
-ggsave("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/gene_bam_RNA_expression_Sstage_trendline_tpm.pdf", width = 8, height = 8)
+# ggsave("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/gene_bam_RNA_expression_Sstage_trendline_tpm.pdf", width = 8, height = 8)

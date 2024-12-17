@@ -7,7 +7,7 @@
 # FUNCTIONS TODO:
 
 get_gene_6mA_density_signal() {
-    chip_read_total_count=$(grep "paired in sequencing" $ | awk '{print $1}')
+    chip_read_total_count=$(grep "paired in sequencing" $chip_summary | awk '{print $1}')
     input_read_total_count=$(grep "paired in sequencing" $input_summary | awk '{print $1}')
     awk '{print $1"\t"$2-1"\t"$2"\t"$3}' $gene_depth_chip | $bedtools intersect -wa -a $all_genes_bed -wb -b stdin >$bam_dir/chip.inter
     awk '{print $1"\t"$2-1"\t"$2"\t"$3}' $gene_depth_input | $bedtools intersect -wa -a $all_genes_bed -wb -b stdin >$bam_dir/input.inter

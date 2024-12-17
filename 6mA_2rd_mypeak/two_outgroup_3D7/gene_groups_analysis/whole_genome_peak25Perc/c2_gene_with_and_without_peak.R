@@ -113,7 +113,7 @@ plot_boxplot_youwu6mA_2parts <- function(data_for_plot = NULL, title = NULL) {
     position1 <- max(data_for_plot$mutation_density)
     p <- ggplot(data_for_plot, aes(x = class, y = mutation_density)) +
         geom_boxplot(aes(color = class), outlier.shape = NA, size = 2) +
-        geom_point(aes(color = class), size = 4) +
+        geom_point(aes(color = class), size = 4, position = position_jitter(w = 0.2, h = 0)) +
         # geom_signif(
         #     # test = "wilcox.test",
         #     test = "t.test",
@@ -188,6 +188,16 @@ for (gene_class_criterion in c("core")) {
         noncore_indel <- plot_boxplot_youwu6mA_2parts(data_for_plot = data %>% filter(class !=
             "Mixed") %>% filter(gene_class == "noncore") %>% filter(type == "Indel"), title = paste(c("Noncore", "Indel", paste0("flank", flank_length)), collapse = "_"))
         (core_snp | core_indel) / (noncore_snp | noncore_indel)
-        ggsave(paste0(mutation_density_global_dir, "/comparing_gene_with_and_without_peak_2parts_flank", flank_length, "_t.test.pdf"), width = 16, height = 16)
+        ggsave(paste0(mutation_density_global_dir, "/comparing_gene_with_and_without_peak_2parts_flank", flank_length, "_t.test.jitter.pdf"), width = 16, height = 16)
     }
 }
+
+
+## 将non-core和core合并起来
+data <- read_peak_proportion_and_mutation_density(gene_class_criterion = "core", flank_length = "0kb")
+snp <- plot_boxplot_youwu6mA_2parts(data_for_plot = data %>% filter(class !=
+    "Mixed") %>% filter(type == "SNP"), title = paste(c("SNP", paste0("flank", flank_length)), collapse = "_"))
+indel <- plot_boxplot_youwu6mA_2parts(data_for_plot = data %>% filter(class !=
+    "Mixed") %>% filter(type == "Indel"), title = paste(c("Indel", paste0("flank", flank_length)), collapse = "_"))
+snp | indel
+ggsave(paste0(mutation_density_global_dir, "/comparing_gene_with_and_without_peak_2parts_flank", flank_length, "_wholegenome_t.test.pdf"), width = 16, height = 8)
