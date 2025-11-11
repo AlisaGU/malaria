@@ -296,17 +296,41 @@ subsample_bam_gene_density <- function(expression_type = NULL, data = NULL, colo
         )
     return(p)
 }
+
+subsample_bam_gene_density_pvalue <- function(expression_type = NULL, data = NULL) {
+    observed <- data.frame(value = data$gene_flank2kb_density_signal[data$RNA_expression_type == expression_type])
+    observed$group <- "observed"
+
+    observed_mean <- mean(observed$value)
+
+    gene_count <- length(which(data$RNA_expression_type == expression_type))
+
+    simulation <- lapply(1:100, function(x) {
+        set.seed(x)
+        index <- sample(1:nrow(data), gene_count)
+        data1 <- data.frame(value = data$gene_flank2kb_density_signal[index])
+
+        data1$group <- paste0("simulation", x)
+        return(data1)
+    })
+    simulation_mean <- sapply(simulation, function(x) {
+        mean(x$value)
+    })
+    observed_index_pos_FromLargeToSmall <- length(which(simulation_mean > observed_mean))
+
+    return(observed_index_pos_FromLargeToSmall)
+}
 # 3. input ---------------------------------------------------------------- TODO:
 all_genes_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/gene_flank2kb.bed"
 
 
 
 ## T stage
-chip_depth <- 36971023
-input_depth <- 21500156
-gene_chip_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/chip.gene_flank2kb.inter.Tstage"
-gene_input_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/input.gene_flank2kb.inter.Tstage"
-RNA_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/3D7_RNA_Tstage_new.txt" # tpm
+# chip_depth <- 36971023
+# input_depth <- 21500156
+# gene_chip_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/chip.gene_flank2kb.inter.Tstage"
+# gene_input_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/input.gene_flank2kb.inter.Tstage"
+# RNA_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/3D7_RNA_Tstage_new.txt" # tpm
 # RNA_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/3D7_RNA_Tstage_fpkm.txt" # fpkm
 
 
@@ -318,11 +342,11 @@ RNA_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/x
 # RNA_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/3D7_RNA_Rstage_new.txt"
 
 ## S stage
-# chip_depth <- 43520326
-# input_depth <- 26404329
-# gene_chip_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/chip.gene_flank2kb.inter.Sstage"
-# gene_input_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/input.gene_flank2kb.inter.Sstage"
-# RNA_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/3D7_RNA_Sstage_new.txt"
+chip_depth <- 43520326
+input_depth <- 26404329
+gene_chip_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/chip.gene_flank2kb.inter.Sstage"
+gene_input_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/input.gene_flank2kb.inter.Sstage"
+RNA_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/3D7_RNA_Sstage_new.txt"
 
 
 upgene_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/RNA_WT210vsKD28/up_gene"
@@ -373,6 +397,9 @@ up <- subsample_bam_gene_density(expression_type = "Up", data = data, color = rg
 down <- subsample_bam_gene_density(expression_type = "Down", data = data, color = rgb(0, 0, 252, maxColorValue = 255))
 up | down
 ggsave("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_flank2kb_6mA_density_signal/up_down_gene+-2kb_density_distri.pdf", width = 14, height = 5)
+
+up_pvalue <- subsample_bam_gene_density_pvalue(expression_type = "Up", data = data)
+down_pvalue <- subsample_bam_gene_density_pvalue(expression_type = "Down", data = data)
 ## 所有基因 6mA density 和基因表达的关系
 ggplot(data %>% filter(!is.infinite(gene_flank2kb_density_signal) & !is.na(gene_flank2kb_density_signal)), aes(x = gene_flank2kb_density_signal, y = AV)) +
     geom_point() +
@@ -384,6 +411,9 @@ data1 <- group_gene_by_coluname(
     data = data %>% filter(!is.infinite(gene_flank2kb_density_signal) & !is.na(gene_flank2kb_density_signal)),
     colnumname = "gene_flank2kb_density_signal", number = 5
 )
+sapply(1:5, function(x) {
+    mean(data1$gene_flank2kb_density_signal[data1$gene_flank2kb_density_signal_type == x])
+})
 write.table(
     data1$gene[data1$gene_flank2kb_density_signal_type == "1"],
     "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/OE_WT_groups/RNA_class1/RNA_class1.geneList.txt",

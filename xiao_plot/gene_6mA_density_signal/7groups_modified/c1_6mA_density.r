@@ -56,6 +56,27 @@ my_test_median_oneside <- function(group2 = NULL) {
     result <- wilcox.test(value1, value2, alternative = "less")$p.value
     return(result)
 }
+
+get_P <- function(data = NULL, control = NULL) {
+    var <- my_test(data_for_plot = data, group1 = control, group2 = "var")
+    stevor <- my_test(data_for_plot = data, group1 = control, group2 = "stevor")
+    rifin <- my_test(data_for_plot = data, group1 = control, group2 = "rifin")
+    rhoptry <- my_test(data_for_plot = data, group1 = control, group2 = "rhoptry")
+    msp <- my_test(data_for_plot = data, group1 = control, group2 = "msp")
+
+    value1 <- data$WT[data$newGroup == control]
+    value2 <- data$WT[data$newGroup == "eba_ama1_rh"]
+    eba_ama1_rh <- list()
+    eba_ama1_rh$wilcox <- wilcox.test(value1, value2)$p.value
+    eba_ama1_rh$t <- t.test(value1, value2)$p.value
+
+    result <- data.frame(
+        geneSet = c("var", "stevor", "rifin", "rhoptry", "msp", "eba_ama1_rh"),
+        wilcoxP = c(var$wilcox$p.value, stevor$wilcox$p.value, rifin$wilcox$p.value, rhoptry$wilcox$p.value, msp$wilcox$p.value, eba_ama1_rh$wilcox),
+        tP = c(var$t$p.value, stevor$t$p.value, rifin$t$p.value, rhoptry$t$p.value, msp$wilcox$p.value, eba_ama1_rh$t)
+    )
+    return(result)
+}
 # 3. input ---------------------------------------------------------------- TODO:
 WT_chip_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/chip.inter"
 WT_input_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/input.inter"
@@ -63,13 +84,28 @@ WT_input_info_filename <- "/picb/evolgen/users/gushanshan/projects/malaria/dataA
 WT_chip_depth <- 36971023
 WT_input_depth <- 21500156
 
-setwd("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/7groups")
-gene_groups <- read.table("7Groups_list.txt", header = F, as.is = T)
+setwd("/picb/evolgen/users/gushanshan/projects/malaria/dataAndResult/xiao_plot/gene_6mA_density_signal/7groups_modified")
+gene_groups <- read.table("../7groups/7Groups_list.txt", header = F, as.is = T)
 # 4. variable setting of test module--------------------------------------- TODO:
 
 
 # 5. process -------------------------------------------------------------- TODO:
 colnames(gene_groups) <- c("gene", "groups")
+
+tricarboxylicAcidCycle <- read.table("tricarboxylicAcidCycle", header = F, as.is = T)
+gluconeogenesis <- read.table("gluconeogenesis", header = F, as.is = T)
+
+gene_groups1 <- rbind(gene_groups %>% filter(groups != "RNA_translation"), data.frame(gene = unlist(tricarboxylicAcidCycle), groups = "TAC"))
+gene_groups2 <- rbind(gene_groups %>% filter(groups != "RNA_translation"), data.frame(gene = unlist(gluconeogenesis), groups = "gluco"))
+gene_group3 <- rbind(gene_groups %>% filter(groups != "RNA_translation"), data.frame(gene = c(unlist(gluconeogenesis), unlist(tricarboxylicAcidCycle)), groups = "glucoAndTAC"))
+####
+# gene_groups <- gene_groups2
+# control <- "gluco"
+
+gene_groups <- gene_group3
+control <- "glucoAndTAC"
+
+
 gene_groups <- gene_groups %>%
     filter(groups != "DNA_repair") %>%
     filter(groups != "merged")
@@ -86,22 +122,19 @@ colnames(gene_WT_6mA_density)[2] <- "WT"
 
 
 data_for_plot <- left_join(gene_groups, gene_WT_6mA_density, by = "gene")
-# data_for_plot$newGroup <- factor(data_for_plot$newGroup, levels = c("RNA_translation", "var", "stevor", "rifin", "rhoptry", "msp", "eba_ama1_rh"))
-data_for_plot$newGroup <- factor(data_for_plot$newGroup, levels = c("RNA_translation", "stevor", "rifin", "var", "rhoptry", "msp", "eba_ama1_rh"))
+data_for_plot$newGroup <- factor(data_for_plot$newGroup, levels = c(control, "stevor", "rifin", "var", "rhoptry", "msp", "eba_ama1_rh"))
 
-Horizontal_value <- median(data_for_plot$WT[data_for_plot$newGroup == "RNA_translation"])
+Horizontal_value <- median(data_for_plot$WT[data_for_plot$newGroup == control])
 
 ggplot(data_for_plot, aes(x = newGroup, y = WT)) +
     geom_boxplot(size = 1.5, fill = "white", outlier.shape = NA, color = "#2f2f2f") +
-    geom_point(size = 5, color = "#939393", position = position_jitter(w = 0.2, h = 0)) +
-
-    # geom_jitter(size = 5, color = "#d78825", width = 0.2, alpha = 0.5) +
-    # geom_violin(size = 1.5, color = "black", fill = NA) +
-    scale_x_discrete(labels = c("RNA translation", "stevor", "rifin", "var", "rhoptry", "msp", "eba, ama1, rh")) +
+    geom_point(size = 5, color = "#94a05b", position = position_jitter(w = 0.2, h = 0)) +
+    scale_x_discrete(labels = c(control, "stevor", "rifin", "var", "rhoptry", "msp", "eba, ama1, rh")) +
     scale_y_continuous(labels = c(1, 3, 5), breaks = c(1, 3, 5)) +
     geom_hline(yintercept = 1, size = 1, color = "#8d3727", linetype = "dashed") +
     # geom_hline(yintercept = Horizontal_value, size = 1, color = "#8d3727", linetype = "dashed") +
-    labs(y = "6mA density in WT") +
+    labs(y = "6mA density") +
+    coord_flip() +
     theme_bw() +
     theme(
         panel.border = element_blank(),
@@ -109,63 +142,14 @@ ggplot(data_for_plot, aes(x = newGroup, y = WT)) +
         panel.grid = element_blank(),
         axis.line = element_line(colour = "black"),
         axis.text.x = element_text(
-            size = 36, color = "black", ,
-            angle = 45, hjust = 1, vjust = 1
+            size = 36, color = "black",
         ),
         axis.text.y = element_text(size = 36, color = "black"),
-        axis.title.x = element_blank(),
-        axis.title.y = element_text(size = 40, color = "black"),
+        axis.title.x = element_text(size = 36, color = "black"),
+        axis.title.y = element_blank(),
         legend.position = "none"
     )
-# ggsave("7groups.pdf", width = 8, height = 8)
-ggsave("7groups_changeOrder.pdf", width = 8, height = 8)
-
+ggsave("7groups_changeOrder_tca_gluco.pdf", width = 8, height = 8)
+get_P(data = data_for_plot, control = control)
 ## compare between groups
 # my_test(data_for_plot = data_for_plot, group1 = "RNA_translation", group2 = "eba_ama1")
-my_test(data_for_plot = data_for_plot, group1 = "RNA_translation", group2 = "var")
-my_test(data_for_plot = data_for_plot, group1 = "RNA_translation", group2 = "stevor")
-my_test(data_for_plot = data_for_plot, group1 = "RNA_translation", group2 = "rifin")
-my_test(data_for_plot = data_for_plot, group1 = "RNA_translation", group2 = "rhoptry")
-my_test(data_for_plot = data_for_plot, group1 = "RNA_translation", group2 = "msp")
-
-# value1 <- data_for_plot$WT[data_for_plot$newGroup == "RNA_translation"]
-# value2 <- data_for_plot$WT[data_for_plot$newGroup == "eba_ama1" | data_for_plot$newGroup == "rh"]
-# result <- list()
-# result$wilcox <- wilcox.test(value1, value2, alternative = "less")$p.value
-# result$t <- t.test(value1, value2)$p.value
-# result
-
-
-value1 <- data_for_plot$WT[data_for_plot$newGroup == "RNA_translation"]
-value2 <- data_for_plot$WT[data_for_plot$newGroup == "eba_ama1_rh"]
-result <- list()
-result$wilcox <- wilcox.test(value1, value2, alternative = "less")$p.value
-result$t <- t.test(value1, value2)$p.value
-result
-
-options(scipen = 10)
-sapply(names(table(data_for_plot$newGroup)), my_test_median_oneside)
-value1 <- data_for_plot$WT[data_for_plot$newGroup == "RNA_translation"]
-value2 <- data_for_plot$WT[data_for_plot$newGroup == "eba_ama1" | data_for_plot$newGroup == "rh"]
-wilcox.test(value1, value2, alternative = "less")$p.value
-
-
-## compare with 1
-sapply(names(table(data_for_plot$newGroup)), test_with_1)
-
-
-## RNA_translation
-ggplot(data_for_plot %>% filter(newGroup == "RNA_translation"), aes(x = newGroup, y = WT, label = gene)) +
-    geom_point(size = 5, color = "red", alpha = 0.2) +
-    geom_label_repel(aes(label = ifelse(WT > 3, as.character(gene), "")),
-        box.padding = 1,
-        point.padding = 0.5,
-        segment.color = "grey50"
-    )
-
-
-RNA_tranlation_order <- data_for_plot %>%
-    filter(newGroup == "RNA_translation") %>%
-    arrange(desc(WT)) %>%
-    select(c("gene", "WT"))
-write.table(RNA_tranlation_order, "RNA_translation.ordered.txt", quote = F, sep = "\t", col.names = T, row.names = F)

@@ -4,6 +4,7 @@ library(data.table)
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
+library(DescTools)
 # 2. functions ------------------------------------------------------------ TODO:
 get_6mA <- function(chip_info_name = NULL, input_info_name = NULL, chip_depth = NULL, input_depth = NULL) {
     chip_info <- fread(chip_info_name, stringsAsFactors = F, header = F)
@@ -110,6 +111,16 @@ sapply(1:5, function(x) {
     chisq.test(chisq_data)
 })
 
+a <- t(table(data_for_plot$exp_significant == "down", data_for_plot$methy_WT_level))
+data_for_test <- data.frame(downgeneCount = a[, 2], otherGeneCount = a[, 1])
+rownames(data_for_test) <- 1:5
+colnames(data_for_test) <- c("Yes", "No")
+CochranArmitageTest(data_for_test)
+
+kd_minus_wt <- data_for_plot %>%
+    filter(exp_significant == "down") %>%
+    select(methy_KDsubtractWT)
+wt_minus_kd <- -kd_minus_wt
 ggplot(data = data_for_plot, aes(x = methy_WT_level, y = -methy_KDsubtractWT)) +
     geom_boxplot(size = 1, outlier.shape = NA, color = "#edb126") +
     geom_point(data = data_for_plot %>% filter(exp_significant == "down"), aes(x = methy_WT_level, y = -methy_KDsubtractWT, ), color = "#67aec7", size = 1, position = position_jitter(w = 0.2, h = 0)) +

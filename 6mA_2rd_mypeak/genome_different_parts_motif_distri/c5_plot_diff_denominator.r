@@ -146,6 +146,9 @@ nopeak_p$labels$y <- ""
 peak_p$labels$x <- "6mA"
 nopeak_p$labels$x <- "Control"
 
-# peak_p | nopeak_p | ratio_p
+#
 ratio_p
 ggsave("peak_nopeak_ratio_motif_base_count_proportion_in_genome_parts.pdf", width = 10, height = 10)
+
+(peak_p + labs(title = "peak")) | (nopeak_p + labs(title = "nopeak")) | (ratio_p+labs(title="peak/nopeak"))
+ggsave("Motif_in_genome_parts_peak_nopeak_ratio.pdf", width = 30, height = 10)
